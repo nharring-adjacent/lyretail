@@ -1,0 +1,9 @@
+[package]
+name = "lyretail"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+drain-flow = { git = "https://github.com/nharring-adjacent/drain-flow"}
+tracing = "0.1.32"
+joinery = "2.1.0"
