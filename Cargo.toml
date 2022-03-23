@@ -4,6 +4,13 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+anyhow = "1.0.56"
+chrono = "0.4.1"
+clap = { version = "3.1.6", features = ["derive", "wrap_help"] }
+crossterm = "0.23"
+ctrlc = "3.2.1"
+duration-str = "0.3" 
 drain-flow = { git = "https://github.com/nharring-adjacent/drain-flow"}
-tracing = "0.1.32"
 joinery = "2.1.0"
+tokio = {version = "1.8.3", features = ["full"]}
+tracing = "0.1.32"
