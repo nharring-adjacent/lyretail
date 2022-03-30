@@ -8,7 +8,7 @@ use std::sync::Arc;
 use app::LyreTail;
 use clap::Parser;
 use drain_flow::SimpleDrain;
-use parking_lot::{RwLock, Mutex};
+use parking_lot::{Mutex, RwLock};
 use tracing::debug;
 
 use ui::Ui;
