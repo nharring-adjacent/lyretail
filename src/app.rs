@@ -14,7 +14,7 @@ use tracing::{debug, instrument};
 #[derive(Clone, Debug)]
 pub(crate) struct LyreTail {
     drain: Arc<RwLock<SimpleDrain>>,
-    args: Arc<Mutex<Args>>,
+    pub args: Arc<Mutex<Args>>,
 }
 
 impl LyreTail {

@@ -55,13 +55,15 @@ impl<'a> Ui<'a> {
         execute!(stdout, EnterAlternateScreen)?;
         let backend = CrosstermBackend::new(stdout);
         let mut terminal = Terminal::new(backend)?;
+        let ui_args = self.app.args.clone();
+        let refresh = ui_args.lock().interval.num_milliseconds();
         loop {
             if self.stopping.load(Ordering::SeqCst) {
                 debug!("stopping flag seen, exiting loop");
                 break;
             }
             terminal.draw(|f| self.render_ui(f))?;
-            sleep(Duration::milliseconds(50).to_std()?);
+            sleep(Duration::milliseconds(refresh).to_std()?);
         }
         {
             let _rs = debug!("restoring terminal");
