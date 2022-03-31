@@ -6,4 +6,4 @@ if [ -z "$1" ]
 else
     FILE=$1
 fi
-RUST_LOG=error cargo run -- --interval 500ms --file <(while cat $FILE; do :; done)
+RUST_LOG=error cargo run -- --interval 500ms --source <(while cat $FILE; do :; done)

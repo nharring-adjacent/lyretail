@@ -1,4 +1,7 @@
-use std::sync::atomic::{AtomicBool, Ordering};
+use crossterm::event::{KeyCode, KeyEvent};
+use futures::{future::FutureExt, StreamExt};
+
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::thread::sleep;
 use std::{io::stdout, sync::Arc};
 
@@ -6,6 +9,8 @@ use anyhow::Error;
 use chrono::Duration;
 use itertools::Itertools;
 use parking_lot::RwLock;
+use tokio::select;
+use tokio::time;
 use tracing::{debug, instrument};
 use tui::{
     backend::{Backend, CrosstermBackend},
@@ -16,6 +21,7 @@ use tui::{
 };
 
 use crossterm::{
+    event::{Event, EventStream},
     execute,
     terminal::{EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -27,6 +33,7 @@ pub(crate) struct Ui<'a> {
     state: Arc<RwLock<TableState>>,
     stopping: Arc<AtomicBool>,
     app: &'a LyreTail,
+    row_count: Arc<AtomicUsize>,
 }
 
 impl<'a> Ui<'a> {
@@ -36,6 +43,7 @@ impl<'a> Ui<'a> {
             state: Arc::new(RwLock::new(TableState::default())),
             stopping: Arc::new(AtomicBool::new(false)),
             app,
+            row_count: Arc::new(AtomicUsize::new(0)),
         }
     }
 
@@ -106,6 +114,7 @@ impl<'a> Ui<'a> {
                 Row::new(cells).height(1).bottom_margin(1)
             })
             .collect::<Vec<Row>>();
+        self.row_count.store(rows.len(), Ordering::SeqCst);
         let t = Table::new(rows)
             .header(header)
             .block(Block::default().borders(Borders::ALL).title("LogGroups"))
@@ -118,5 +127,71 @@ impl<'a> Ui<'a> {
             ]);
         debug!("finished building table");
         f.render_stateful_widget(t, rects[0], &mut self.state.clone().write());
+    }
+
+    async fn handle_events(&self) {
+        let mut reader = EventStream::new();
+        loop {
+            let delay = time::sleep(Duration::milliseconds(50).to_std().unwrap()).fuse();
+            let event = reader.next().fuse();
+            select! {
+                _ = delay => {},
+                maybe_event = event => {
+                    match maybe_event {
+                        Some(Ok(event)) => {
+                            match event {
+                                Event::Key(k) => {
+                                    match k {
+                                        KeyEvent { code, .. } => {
+                                            match code {
+                                                KeyCode::Up => {
+                                                    let selected = self.state.read().selected();
+                                                    if let Some(i) = selected {
+                                                        if i > 0 {
+                                                            self.state.write().select(Some(i-1));
+                                                            continue;
+                                                        } else {
+                                                            self.state.write().select(Some(0));
+                                                            continue;
+                                                        }
+                                                    } else {
+                                                        self.state.write().select(Some(0));
+                                                        continue;
+                                                    }
+                                                },
+                                                KeyCode::Down => {
+                                                    let selected = self.state.read().selected();
+                                                    if let Some(i) = selected {
+                                                        let cnt = self.row_count.load(Ordering::SeqCst);
+                                                        if i <  cnt {
+                                                            self.state.write().select(Some(i+1));
+                                                            continue;
+                                                        } else {
+                                                            self.state.write().select(Some(i));
+                                                            continue;
+                                                        }
+                                                    } else {
+                                                        self.state.write().select(Some(0));
+                                                        continue;
+                                                    }
+                                                },
+                                                KeyCode::Esc => {},
+                                                _ => {},
+                                            }
+                                        },
+                                    }
+                                },
+                                Event::Mouse(_) => {},
+                                Event::Resize(_, _) => {},
+                            }
+                        },
+                        Some(Err(e)) => {
+                            panic!("{:?}", e);
+                        },
+                        None => {},
+                    }
+                },
+            };
+        }
     }
 }

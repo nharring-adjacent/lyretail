@@ -15,5 +15,8 @@ pub(crate) struct Args {
     pub interval: Duration,
     /// The source of input, read from stdin if not specified
     #[clap(short, long)]
-    pub file: Option<PathBuf>,
+    pub source: Option<PathBuf>,
+    /// Whether to watch files for changes when the end is reached
+    #[clap(short, long)]
+    pub follow: bool,
 }
