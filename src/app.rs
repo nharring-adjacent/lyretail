@@ -31,7 +31,7 @@ impl LyreTail {
                     )))
                 })
                 .unwrap(),
-            args: args.clone(),
+            args,
         })
     }
 
@@ -46,7 +46,7 @@ impl LyreTail {
     pub fn run(&self) {
         let file = self.args.lock().source.clone();
         let drain = self.get_drain_ref();
-        let follow = self.args.lock().follow.clone();
+        let follow = self.args.lock().follow;
         let io_runtime = Builder::new_current_thread().enable_all().build().unwrap();
         std::thread::spawn(move || {
             let mut reader = Box::pin(BufReader::new(stdin())) as Pin<Box<dyn AsyncBufRead>>;

@@ -1,6 +1,7 @@
 [package]
 name = "lyretail"
-version = "0.2.0"
+description = "Lyretail is a command line log processing utility providing a summary view of the log lines seen and capable of operating on streaming or static data"
+version = "0.3.0"
 edition = "2021"
 
 [dependencies]

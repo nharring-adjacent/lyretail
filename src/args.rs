@@ -11,7 +11,7 @@ pub(crate) struct Args {
     #[clap(short, long)]
     pub periodic: bool,
     /// The interval between updates
-    #[clap(parse(try_from_str = parse_chrono), short, long, default_value="10s")]
+    #[clap(parse(try_from_str = parse_chrono), short, long, default_value="1s")]
     pub interval: Duration,
     /// The source of input, read from stdin if not specified
     #[clap(short, long)]

@@ -3,13 +3,16 @@ mod app;
 mod args;
 mod ui;
 
-use std::sync::Arc;
+use std::{io, sync::Arc};
 
 use app::LyreTail;
 use clap::Parser;
 use drain_flow::SimpleDrain;
 use parking_lot::{Mutex, RwLock};
-use tracing::debug;
+use tracing::{debug, Level};
+use tracing_subscriber::filter::LevelFilter;
+use tracing_subscriber::fmt::format::FmtSpan;
+use tracing_subscriber::prelude::*;
 
 use ui::Ui;
 
@@ -17,8 +20,17 @@ use crate::args::Args;
 
 #[tokio::main]
 async fn main() {
-    // console_subscriber::init();
-    tracing_subscriber::fmt::init();
+    tracing_subscriber::registry()
+        .with(console_subscriber::spawn())
+        .with(
+            tracing_subscriber::fmt::layer()
+                .with_ansi(false)
+                .with_span_events(FmtSpan::NONE)
+                .with_writer(io::stderr)
+                .compact()
+                .with_filter(LevelFilter::from_level(Level::WARN)),
+        )
+        .init();
 
     let args = Arc::new(Mutex::new(Args::parse()));
     debug!("got args");
