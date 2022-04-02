@@ -1,4 +1,7 @@
-use std::sync::atomic::{AtomicBool, Ordering};
+use crossterm::event::{self, KeyCode, KeyModifiers};
+use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
+
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::thread::sleep;
 use std::{io::stdout, sync::Arc};
 
@@ -6,7 +9,7 @@ use anyhow::Error;
 use chrono::Duration;
 use itertools::Itertools;
 use parking_lot::RwLock;
-use tracing::{debug, instrument};
+use tracing::{debug, instrument, warn};
 use tui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Layout},
@@ -16,9 +19,9 @@ use tui::{
 };
 
 use crossterm::{
-    event::{DisableMouseCapture, EnableMouseCapture},
+    event::Event,
     execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    terminal::{EnterAlternateScreen, LeaveAlternateScreen},
 };
 
 use crate::app::LyreTail;
@@ -28,6 +31,7 @@ pub(crate) struct Ui<'a> {
     state: Arc<RwLock<TableState>>,
     stopping: Arc<AtomicBool>,
     app: &'a LyreTail,
+    row_count: Arc<AtomicUsize>,
 }
 
 impl<'a> Ui<'a> {
@@ -37,21 +41,15 @@ impl<'a> Ui<'a> {
             state: Arc::new(RwLock::new(TableState::default())),
             stopping: Arc::new(AtomicBool::new(false)),
             app,
+            row_count: Arc::new(AtomicUsize::new(0)),
         }
     }
 
     #[instrument]
     pub(crate) fn run_ui(&self) -> Result<(), Error> {
-        let h = self.stopping.clone();
-        ctrlc::set_handler(move || {
-            debug!("caught ctrl-c, setting stopping flag");
-            h.store(true, Ordering::SeqCst);
-        })
-        .expect("Installing ctrl-c handler works");
         // setup terminal
-        // enable_raw_mode()?;
         let mut stdout = stdout();
-
+        enable_raw_mode()?;
         execute!(stdout, EnterAlternateScreen)?;
         let backend = CrosstermBackend::new(stdout);
         let mut terminal = Terminal::new(backend)?;
@@ -63,16 +61,73 @@ impl<'a> Ui<'a> {
                 break;
             }
             terminal.draw(|f| self.render_ui(f))?;
+            if crossterm::event::poll(Duration::milliseconds(0).to_std()?)? {
+                if let Event::Key(key) = event::read()? {
+                    let rows = self.row_count.load(Ordering::SeqCst);
+                    match key.code {
+                        KeyCode::Up => {
+                            // This assignment prevents a deadlock inside the if let body
+                            let selected = self.state.read().selected();
+                            if let Some(selected) = selected {
+                                debug!(%selected, "key up processing");
+                                // When navigating a list up is down and we stop at 0
+                                if selected > 0 {
+                                    self.state.write().select(Some(selected - 1));
+                                    continue;
+                                }
+                            }
+                            debug!("nothing selected key up");
+                            self.state.write().select(Some(0));
+                        }
+                        KeyCode::Down => {
+                            // This assignment prevents a deadlock inside the if let body
+                            let selected = self.state.read().selected();
+                            if let Some(selected) = selected {
+                                warn!(%selected, "key down processing");
+                                if selected < rows {
+                                    self.state.write().select(Some(selected + 1));
+                                    continue;
+                                }
+                            }
+                            debug!("nothing selected key down");
+                            self.state.write().select(Some(rows - 1))
+                        }
+                        KeyCode::Esc => {
+                            debug!("key esc");
+                            self.trigger_exit();
+                            break;
+                        }
+                        KeyCode::Char(c) => {
+                            // Ctrl-C, q and Esc all trigger exit
+                            if (c == 'c' && key.modifiers.contains(KeyModifiers::CONTROL))
+                                || c == 'q'
+                            {
+                                debug!("key ctrl-c");
+                                self.trigger_exit();
+                                break;
+                            }
+                        }
+                        u => {
+                            warn!(?u, "Unknown key");
+                        }
+                    }
+                }
+            }
             sleep(Duration::milliseconds(refresh).to_std()?);
         }
         {
             let _rs = debug!("restoring terminal");
-            // disable_raw_mode()?;
+            disable_raw_mode()?;
             execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
             terminal.show_cursor()?;
         }
         debug!("run_ui complete");
         Ok(())
+    }
+
+    fn trigger_exit(&self) {
+        warn!("Triggering program exit");
+        self.stopping.store(true, Ordering::SeqCst);
     }
 
     fn render_ui<B: Backend>(&self, f: &mut Frame<B>) {
@@ -107,6 +162,7 @@ impl<'a> Ui<'a> {
                 Row::new(cells).height(1).bottom_margin(1)
             })
             .collect::<Vec<Row>>();
+        self.row_count.store(rows.len(), Ordering::SeqCst);
         let t = Table::new(rows)
             .header(header)
             .block(Block::default().borders(Borders::ALL).title("LogGroups"))
