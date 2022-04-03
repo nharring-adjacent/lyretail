@@ -1,12 +1,11 @@
-use crossterm::event::{self, Event, EventStream, KeyCode, KeyModifiers};
+use crossterm::event::{self, Event};
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 use drain_flow::log_group::LogGroup;
 use tui::backend::Backend;
 use tui::Frame;
 
-use std::collections::HashMap;
 use std::io::Stdout;
-use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread::sleep;
 use std::{io::stdout, sync::Arc};
 
@@ -57,7 +56,7 @@ impl<'a> Ui<'a> {
         enable_raw_mode()?;
         execute!(stdout, EnterAlternateScreen)?;
         let backend = CrosstermBackend::new(stdout);
-        let mut terminal = Terminal::new(backend)?;
+        let terminal = Terminal::new(backend)?;
         Ok(Self {
             app,
             state: UiState::Base,

@@ -7,7 +7,7 @@ use tui::{
     backend::Backend,
     layout::{Alignment, Constraint, Layout},
     text::{Span, Spans},
-    widgets::{Block, Cell, Paragraph, Table, Wrap},
+    widgets::{Block, Paragraph, Wrap},
     Frame,
 };
 

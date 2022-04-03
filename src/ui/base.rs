@@ -8,16 +8,16 @@ use drain_flow::log_group::LogGroup;
 use itertools::Itertools;
 use tracing::{debug, instrument, warn};
 use tui::{
-    backend::{Backend, CrosstermBackend},
+    backend::Backend,
     layout::{Constraint, Layout},
     style::{Color, Modifier, Style},
     widgets::{Block, Borders, Cell, Row, Table, TableState},
-    Frame, Terminal,
+    Frame,
 };
 
 use crate::app::LyreTail;
 
-use super::{LyreUIWidget, UiState};
+use super::UiState;
 
 #[derive(Clone, Debug)]
 pub(crate) struct BaseTable<'a> {
