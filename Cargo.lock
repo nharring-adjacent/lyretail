@@ -371,8 +371,8 @@ dependencies = [
 
 [[package]]
 name = "drain-flow"
-version = "0.3.0"
-source = "git+https://github.com/nharring-adjacent/drain-flow#51e32170f42241bd818b464159e6186229e986e4"
+version = "0.3.2"
+source = "git+https://github.com/nharring-adjacent/drain-flow#126c231a8440ddf3217ea6becbf1e90ef2066900"
 dependencies = [
  "anyhow",
  "custom_derive",
