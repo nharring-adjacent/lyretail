@@ -155,6 +155,8 @@ impl BaseTable {
             .flatten()
             .sorted_by(|a, b| Ord::cmp(&b.len(), &a.len()))
             .nth(idx)
-            .expect("idx is based on selected, should exist").clone().to_owned()
+            .expect("idx is based on selected, should exist")
+            .clone()
+            .to_owned()
     }
 }
