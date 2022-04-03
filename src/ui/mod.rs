@@ -28,15 +28,16 @@ use self::log_group::LogGroupTab;
 mod base;
 mod log_group;
 
-pub(crate) struct Ui<'a> {
-    app: &'a LyreTail,
-    base: BaseTable<'a>,
+pub(crate) struct Ui {
+    app: Arc<LyreTail>,
+    base: BaseTable,
     stopping: Arc<AtomicBool>,
     state: UiState,
     terminal: Terminal<CrosstermBackend<Stdout>>,
     log_group: Option<Arc<LogGroup>>,
 }
 
+#[derive(Clone)]
 pub(crate) enum UiState {
     Base,
     LogGroup(Arc<LogGroup>),
@@ -48,9 +49,9 @@ pub(crate) trait LyreUIWidget<B: Backend> {
     fn handle_events(&mut self, event: Event) -> UiState;
 }
 
-impl<'a> Ui<'a> {
+impl Ui {
     // #[instrument(skip(app))]
-    pub fn new(app: &'a LyreTail) -> Result<Self, Error> {
+    pub fn new(app: Arc<LyreTail>) -> Result<Self, Error> {
         // setup terminal
         let mut stdout = stdout();
         enable_raw_mode()?;
@@ -58,10 +59,10 @@ impl<'a> Ui<'a> {
         let backend = CrosstermBackend::new(stdout);
         let terminal = Terminal::new(backend)?;
         Ok(Self {
-            app,
+            app: app.clone(),
             state: UiState::Base,
             stopping: Arc::new(AtomicBool::new(false)),
-            base: BaseTable::new(app),
+            base: BaseTable::new(app.clone()),
             terminal,
             log_group: None,
         })
@@ -81,7 +82,7 @@ impl<'a> Ui<'a> {
                 debug!("stopping flag seen, exiting loop");
                 break;
             }
-            let next_state = match &self.state {
+            self.state = match &self.state {
                 UiState::Base => {
                     self.terminal.draw(|f| self.base.do_render(f))?;
                     if crossterm::event::poll(Duration::milliseconds(10).to_std()?)? {
@@ -107,7 +108,6 @@ impl<'a> Ui<'a> {
                     UiState::Exiting
                 }
             };
-            self.state = next_state;
             sleep(Duration::milliseconds(refresh).to_std()?);
         }
         let _rs = debug!("restoring terminal");

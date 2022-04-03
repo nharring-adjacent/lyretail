@@ -20,18 +20,18 @@ use crate::app::LyreTail;
 use super::UiState;
 
 #[derive(Clone, Debug)]
-pub(crate) struct BaseTable<'a> {
+pub(crate) struct BaseTable {
     row_count: Arc<AtomicUsize>,
     state: TableState,
-    app: &'a LyreTail,
+    app: Arc<LyreTail>,
 }
 
-impl<'a> BaseTable<'a> {
-    pub(crate) fn new(app: &'a LyreTail) -> Self {
+impl BaseTable {
+    pub(crate) fn new(app: Arc<LyreTail>) -> Self {
         Self {
             row_count: Arc::new(AtomicUsize::new(0)),
             state: TableState::default(),
-            app,
+            app: app.clone(),
         }
     }
 
@@ -131,7 +131,7 @@ impl<'a> BaseTable<'a> {
                 }
                 KeyCode::Enter => {
                     if let Some(selected) = self.state.selected() {
-                        let lg = self.get_selected(self.app, selected);
+                        let lg = self.get_selected(selected);
                         return UiState::LogGroup(Arc::new(lg));
                     } else {
                         return UiState::Base;
@@ -146,16 +146,15 @@ impl<'a> BaseTable<'a> {
         UiState::Base
     }
 
-    fn get_selected(&self, app: &LyreTail, idx: usize) -> LogGroup {
-        app.get_drain_ref()
+    fn get_selected(&self, idx: usize) -> LogGroup {
+        self.app
+            .get_drain_ref()
             .read()
             .iter_groups()
             .iter()
             .flatten()
             .sorted_by(|a, b| Ord::cmp(&b.len(), &a.len()))
             .nth(idx)
-            .expect("idx is based on selected, should exist")
-            .clone()
-            .to_owned()
+            .expect("idx is based on selected, should exist").clone().to_owned()
     }
 }

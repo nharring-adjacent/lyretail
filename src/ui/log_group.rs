@@ -18,7 +18,7 @@ pub(crate) struct LogGroupTab {
     lg: Arc<LogGroup>,
 }
 
-impl<'a> LogGroupTab {
+impl LogGroupTab {
     pub(crate) fn new(lg: Arc<LogGroup>) -> Self {
         Self { lg }
     }
