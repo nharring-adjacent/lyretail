@@ -13,10 +13,13 @@ crossterm = { version = "0.23", features = ["event-stream"] }
 ctrlc = "3.2.1"
 duration-str = "0.3"
 drain-flow = { git = "https://github.com/nharring-adjacent/drain-flow" }
+enum_derive = "0.1"
+enum-kinds = "0.5"
 futures = "0.3.21"
 futures-core = "0.3"
 itertools = "0.10.3"
 joinery = "2.1.0"
+macro-attr="0.2"
 parking_lot = "0.12.0"
 tokio = { version = "1.8.3", features = ["full", "tracing"] }
 tokio-util = { version = "0.7", features = ["rt"] }

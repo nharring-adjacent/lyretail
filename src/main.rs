@@ -1,3 +1,6 @@
+#![feature(associated_type_bounds)]
+#[macro_use]
+extern crate enum_kinds;
 extern crate tracing;
 mod app;
 mod args;
@@ -14,8 +17,8 @@ use tracing_subscriber::filter::LevelFilter;
 use tracing_subscriber::fmt::format::FmtSpan;
 use tracing_subscriber::prelude::*;
 
-use ui::Ui;
 use crate::args::Args;
+use ui::Ui;
 
 #[tokio::main]
 async fn main() {
