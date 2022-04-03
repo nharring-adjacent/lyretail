@@ -15,7 +15,6 @@ use tracing_subscriber::fmt::format::FmtSpan;
 use tracing_subscriber::prelude::*;
 
 use ui::Ui;
-
 use crate::args::Args;
 
 #[tokio::main]
@@ -38,10 +37,10 @@ async fn main() {
     debug!("got drain");
     let app = LyreTail::create_app(Some(drain), args).unwrap();
     debug!("got app");
-
-    app.run();
+    let app_ref = Arc::new(app);
+    app_ref.run();
     debug!("app running");
-    let ui = Ui::new(&app);
+    let mut ui = Ui::new(app_ref.clone()).unwrap();
     debug!("got ui");
     ui.run_ui().unwrap();
 }
