@@ -1,3 +1,6 @@
+#![feature(associated_type_bounds)]
+#[macro_use]
+extern crate enum_kinds;
 extern crate tracing;
 mod app;
 mod args;
@@ -41,7 +44,7 @@ async fn main() {
 
     app.run();
     debug!("app running");
-    let ui = Ui::new(&app);
+    let mut ui = Ui::new(&app).unwrap();
     debug!("got ui");
     ui.run_ui().unwrap();
 }
