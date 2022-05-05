@@ -16,7 +16,6 @@ use tui::Frame;
 
 use std::io::Stdout;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::thread::sleep;
 use std::{io::stdout, sync::Arc};
 
 use anyhow::Error;
@@ -39,7 +38,6 @@ mod base;
 mod log_group;
 
 pub(crate) struct Ui {
-    app: Arc<LyreTail>,
     base: BaseTable,
     stopping: Arc<AtomicBool>,
     state: UiState,
@@ -59,9 +57,9 @@ pub(crate) trait LyreUIWidget<B: Backend> {
     fn handle_events(&mut self, event: Event) -> UiState;
 }
 
-impl Ui {
-    // #[instrument(skip(app))]
-    pub fn new(app: Arc<LyreTail>) -> Result<Self, Error> {
+impl<'a> Ui {
+    #[instrument(level = "trace", skip_all)]
+    pub fn new<'b>(app: Arc<LyreTail>) -> Result<Self, Error> {
         // setup terminal
         let mut stdout = stdout();
         enable_raw_mode()?;
@@ -69,7 +67,6 @@ impl Ui {
         let backend = CrosstermBackend::new(stdout);
         let terminal = Terminal::new(backend)?;
         Ok(Self {
-            app: app.clone(),
             state: UiState::Base,
             stopping: Arc::new(AtomicBool::new(false)),
             base: BaseTable::new(app.clone()),
@@ -78,15 +75,13 @@ impl Ui {
         })
     }
 
-    #[instrument(skip(self))]
+    #[instrument(level="trace", skip(self))]
     fn trigger_exit(&self) {
         warn!("Triggering program exit");
         self.stopping.store(true, Ordering::SeqCst);
     }
-    #[instrument(skip(self))]
+    #[instrument(level="trace", skip(self))]
     pub(crate) fn run_ui(&mut self) -> Result<(), Error> {
-        let ui_args = self.app.args.clone();
-        let refresh = ui_args.lock().interval.num_milliseconds();
         loop {
             if self.stopping.load(Ordering::SeqCst) {
                 debug!("stopping flag seen, exiting loop");
@@ -118,7 +113,6 @@ impl Ui {
                     UiState::Exiting
                 }
             };
-            sleep(Duration::milliseconds(refresh).to_std()?);
         }
         let _rs = debug!("restoring terminal");
         disable_raw_mode()?;

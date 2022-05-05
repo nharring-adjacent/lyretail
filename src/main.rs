@@ -9,49 +9,63 @@
 // If not, see <http://www.mongodb.com/licensing/server-side-public-license>.
 
 #![feature(associated_type_bounds)]
-#[macro_use]
 extern crate enum_kinds;
 extern crate tracing;
 mod app;
 mod args;
+mod sources;
 mod ui;
 
-use std::{io, sync::Arc};
+use std::{fs::File, sync::Arc};
 
 use app::LyreTail;
-use clap::Parser;
+use clap::{CommandFactory, Parser};
 use drain_flow::SimpleDrain;
 use parking_lot::{Mutex, RwLock};
-use tracing::{debug, Level};
-use tracing_subscriber::filter::LevelFilter;
+use tracing::debug;
 use tracing_subscriber::fmt::format::FmtSpan;
 use tracing_subscriber::prelude::*;
+use tracing_subscriber::EnvFilter;
 
 use crate::args::Args;
 use ui::Ui;
 
 #[tokio::main]
 async fn main() {
+    let log_file = File::create("/tmp/lyretail.log").unwrap();
+    let filter_layer = EnvFilter::try_from_default_env()
+        .or_else(|_| EnvFilter::try_new("info"))
+        .unwrap();
+
     tracing_subscriber::registry()
         .with(console_subscriber::spawn())
         .with(
             tracing_subscriber::fmt::layer()
                 .with_ansi(false)
-                .with_span_events(FmtSpan::NONE)
-                .with_writer(io::stderr)
+                .with_span_events(FmtSpan::ACTIVE)
+                .with_writer(Arc::new(log_file))
                 .compact()
-                .with_filter(LevelFilter::from_level(Level::WARN)),
+                .with_filter(filter_layer),
         )
         .init();
 
-    let args = Arc::new(Mutex::new(Args::parse()));
+    let args_inner = Args::parse();
     debug!("got args");
+    match args_inner.validate() {
+        Ok(_) => {}
+        Err(e) => {
+            let mut cmd = Args::command();
+            cmd.error(e, "Incompatible arguments provided").exit();
+        }
+    };
+    debug!("validated args");
+    let args = Arc::new(Mutex::new(args_inner));
     let drain = Arc::new(RwLock::new(SimpleDrain::new(vec![]).unwrap()));
     debug!("got drain");
     let app = LyreTail::create_app(Some(drain), args).unwrap();
     debug!("got app");
     let app_ref = Arc::new(app);
-    app_ref.run();
+    app_ref.init_input().await;
     debug!("app running");
     let mut ui = Ui::new(app_ref.clone()).unwrap();
     debug!("got ui");

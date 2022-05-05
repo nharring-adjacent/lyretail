@@ -14,7 +14,7 @@ Lyretail is different, requiring no upfront knowledge of stream contents and str
 
 ## Example usage
 This recording was generated using the demo.sh with no arguments on a Macbook air which has `/var/log/wifi.log`.
-[![asciicast](https://asciinema.org/a/481881.svg)](https://asciinema.org/a/481881)
+[![asciicast](https://asciinema.org/a/481881.png)](https://asciinema.org/a/481881?autoplay=1&preload=1)
 
 ## What's with the name?
 [Lyretail Coralfish](https://en.wikipedia.org/wiki/Sea_goldie) are members of the grouper (and sea bass!) family, and in my mind
