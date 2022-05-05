@@ -1,10 +1,11 @@
 use std::path::PathBuf;
 
 use async_trait::async_trait;
-use tokio::fs::File;
-use tokio::io::AsyncBufReadExt;
-use tokio::io::BufReader;
-use tokio::sync::mpsc;
+use tokio::{
+    fs::File,
+    io::{AsyncBufReadExt, BufReader},
+    sync::mpsc,
+};
 use tracing::instrument;
 
 use crate::sources::LogReader;
@@ -15,7 +16,7 @@ pub(crate) struct FileReader<'a> {
 }
 
 impl<'a> FileReader<'a> {
-    #[instrument(level="trace")]
+    #[instrument(level = "trace")]
     pub(crate) fn new(file: &'a PathBuf, follow: bool) -> Self {
         Self { file, follow }
     }
@@ -23,7 +24,7 @@ impl<'a> FileReader<'a> {
 
 #[async_trait]
 impl LogReader for FileReader<'_> {
-    #[instrument(level="trace", skip_all)]
+    #[instrument(level = "trace", skip_all)]
     async fn read_logs(
         &self,
         drain_writer: mpsc::UnboundedSender<String>,

@@ -8,31 +8,31 @@
 // Server Side Public License along with this program.
 // If not, see <http://www.mongodb.com/licensing/server-side-public-license>.
 
-use crossterm::event::{self, Event};
-use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
-use drain_flow::log_group::LogGroup;
-use tui::backend::Backend;
-use tui::Frame;
-
-use std::io::Stdout;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::{io::stdout, sync::Arc};
+use std::{
+    io::{stdout, Stdout},
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
+};
 
 use anyhow::Error;
 use chrono::Duration;
-
-use tracing::{debug, instrument, warn};
-use tui::{backend::CrosstermBackend, Terminal};
-
 use crossterm::{
+    event::{self, Event},
     execute,
-    terminal::{EnterAlternateScreen, LeaveAlternateScreen},
+    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+};
+use drain_flow::log_group::LogGroup;
+use tracing::{debug, instrument, warn};
+use tui::{
+    backend::{Backend, CrosstermBackend},
+    Frame,
+    Terminal,
 };
 
+use self::{base::BaseTable, log_group::LogGroupTab};
 use crate::app::LyreTail;
-
-use self::base::BaseTable;
-use self::log_group::LogGroupTab;
 
 mod base;
 mod log_group;
@@ -75,12 +75,13 @@ impl<'a> Ui {
         })
     }
 
-    #[instrument(level="trace", skip(self))]
+    #[instrument(level = "trace", skip(self))]
     fn trigger_exit(&self) {
         warn!("Triggering program exit");
         self.stopping.store(true, Ordering::SeqCst);
     }
-    #[instrument(level="trace", skip(self))]
+
+    #[instrument(level = "trace", skip(self))]
     pub(crate) fn run_ui(&mut self) -> Result<(), Error> {
         loop {
             if self.stopping.load(Ordering::SeqCst) {
@@ -96,7 +97,7 @@ impl<'a> Ui {
                     } else {
                         UiState::Base
                     }
-                }
+                },
                 UiState::LogGroup(log_group) => {
                     self.log_group = Some(log_group.clone());
                     let lg_view = LogGroupTab::new(log_group.clone());
@@ -107,11 +108,11 @@ impl<'a> Ui {
                     } else {
                         UiState::LogGroup(log_group.clone())
                     }
-                }
+                },
                 UiState::Exiting => {
                     self.stopping.store(true, Ordering::SeqCst);
                     UiState::Exiting
-                }
+                },
             };
         }
         let _rs = debug!("restoring terminal");

@@ -13,13 +13,15 @@ use std::sync::Arc;
 use anyhow::Error;
 use drain_flow::SimpleDrain;
 use parking_lot::{Mutex, RwLock};
-use tokio::task;
-use tokio::sync::mpsc;
+use tokio::{sync::mpsc, task};
 use tracing::instrument;
 
 #[cfg(feature = "aws")]
 use crate::sources::aws;
-use crate::{args::Args, sources::{file::FileReader, LogReader}};
+use crate::{
+    args::Args,
+    sources::{file::FileReader, LogReader},
+};
 #[derive(Clone, Debug)]
 pub(crate) struct LyreTail {
     drain: Arc<RwLock<SimpleDrain>>,
@@ -64,7 +66,7 @@ impl LyreTail {
                     let reader = FileReader::new(&file, follow);
                     reader.read_logs(writer).await.unwrap();
                 });
-            }
+            },
             #[cfg(feature = "aws")]
             crate::sources::SourceType::Cloudwatch => {
                 let args = self.args.lock();
@@ -76,10 +78,12 @@ impl LyreTail {
                 let until = args.until.clone();
                 let window = args.window.clone();
                 task::spawn(async move {
-                    let reader = aws::cloudwatch::CloudwatchReader::new(since, until, window, log_group).await;
+                    let reader =
+                        aws::cloudwatch::CloudwatchReader::new(since, until, window, log_group)
+                            .await;
                     reader.read_logs(writer).await.unwrap();
                 });
-            }
+            },
         };
 
         task::spawn(async move { process_lines(drain, reader).await });

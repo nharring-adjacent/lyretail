@@ -17,5 +17,8 @@ pub(crate) enum SourceType {
 
 #[async_trait]
 pub(crate) trait LogReader {
-    async fn read_logs(&self, drain_writer: mpsc::UnboundedSender<String>) -> Result<(), anyhow::Error>;
+    async fn read_logs(
+        &self,
+        drain_writer: mpsc::UnboundedSender<String>,
+    ) -> Result<(), anyhow::Error>;
 }

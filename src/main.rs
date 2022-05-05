@@ -23,12 +23,10 @@ use clap::{CommandFactory, Parser};
 use drain_flow::SimpleDrain;
 use parking_lot::{Mutex, RwLock};
 use tracing::debug;
-use tracing_subscriber::fmt::format::FmtSpan;
-use tracing_subscriber::prelude::*;
-use tracing_subscriber::EnvFilter;
+use tracing_subscriber::{fmt::format::FmtSpan, prelude::*, EnvFilter};
+use ui::Ui;
 
 use crate::args::Args;
-use ui::Ui;
 
 #[tokio::main]
 async fn main() {
@@ -52,11 +50,11 @@ async fn main() {
     let args_inner = Args::parse();
     debug!("got args");
     match args_inner.validate() {
-        Ok(_) => {}
+        Ok(_) => {},
         Err(e) => {
             let mut cmd = Args::command();
             cmd.error(e, "Incompatible arguments provided").exit();
-        }
+        },
     };
     debug!("validated args");
     let args = Arc::new(Mutex::new(args_inner));

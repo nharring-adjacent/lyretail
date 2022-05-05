@@ -25,9 +25,8 @@ use tui::{
     Frame,
 };
 
-use crate::app::LyreTail;
-
 use super::UiState;
+use crate::app::LyreTail;
 
 #[derive(Clone, Debug)]
 pub(crate) struct BaseTable {
@@ -112,7 +111,7 @@ impl<'a> BaseTable {
                         self.state.select(Some(0));
                     }
                     return UiState::Base;
-                }
+                },
                 KeyCode::Down => {
                     debug!("key down handler");
                     let selected = self.state.selected();
@@ -128,11 +127,11 @@ impl<'a> BaseTable {
                     }
 
                     return UiState::Base;
-                }
+                },
                 KeyCode::Esc => {
                     debug!("key esc");
                     return UiState::Exiting;
-                }
+                },
                 KeyCode::Char(c) => {
                     // Ctrl-C, q and Esc all trigger exit
                     if (c == 'c' && key.modifiers.contains(KeyModifiers::CONTROL)) || c == 'q' {
@@ -141,7 +140,7 @@ impl<'a> BaseTable {
                     } else {
                         return UiState::Base;
                     }
-                }
+                },
                 KeyCode::Enter => {
                     if let Some(selected) = self.state.selected() {
                         let lg = self.get_selected(selected);
@@ -149,11 +148,11 @@ impl<'a> BaseTable {
                     } else {
                         return UiState::Base;
                     }
-                }
+                },
                 u => {
                     warn!(?u, "Unknown key");
                     return UiState::Base;
-                }
+                },
             }
         }
         UiState::Base

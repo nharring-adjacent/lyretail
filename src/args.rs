@@ -51,13 +51,13 @@ impl Args {
     #[instrument(level = "trace")]
     pub fn validate(&self) -> Result<(), clap::ErrorKind> {
         match self.source_type {
-            SourceType::File => {}
+            SourceType::File => {},
             #[cfg(feature = "aws")]
             SourceType::Cloudwatch => {
                 if self.window.is_some() && (self.since.is_some() || self.until.is_some()) {
                     return Err(ErrorKind::ArgumentConflict);
                 }
-            }
+            },
         }
         Ok(())
     }

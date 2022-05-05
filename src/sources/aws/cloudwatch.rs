@@ -28,7 +28,7 @@ impl CloudwatchReader {
                     .expect("valid duration should not wrap");
                 let end = Utc::now();
                 (start, end)
-            }
+            },
             None => {
                 let start = if let None = since {
                     // default to 1 hour ago
@@ -45,23 +45,20 @@ impl CloudwatchReader {
                     until.unwrap().to_owned()
                 };
                 (start, end)
-            }
+            },
         };
         CloudwatchReader {
             client: aws_sdk_cloudwatchlogs::Client::new(&client_config),
             since: start,
             until: end,
-            log_stream
+            log_stream,
         }
     }
 }
 
 #[async_trait]
 impl LogReader for CloudwatchReader {
-    async fn read_logs(
-        &self,
-        lines: mpsc::UnboundedSender<String>,
-    ) -> Result<(), anyhow::Error> {
+    async fn read_logs(&self, lines: mpsc::UnboundedSender<String>) -> Result<(), anyhow::Error> {
         let mut event_fetcher = self
             .client
             .get_log_events()

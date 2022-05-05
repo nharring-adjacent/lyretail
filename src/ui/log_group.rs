@@ -55,7 +55,7 @@ impl LogGroupTab {
             match key.code {
                 KeyCode::Esc => {
                     return UiState::Base;
-                }
+                },
                 KeyCode::Char(c) => {
                     // Ctrl-C, q and Esc all trigger exit
                     if (c == 'c' && key.modifiers.contains(KeyModifiers::CONTROL)) || c == 'q' {
@@ -64,10 +64,10 @@ impl LogGroupTab {
                     } else {
                         return current;
                     }
-                }
+                },
                 _ => {
                     return current;
-                }
+                },
             }
         }
         current
