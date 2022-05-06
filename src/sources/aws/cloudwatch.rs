@@ -9,26 +9,30 @@
 // If not, see <http://www.mongodb.com/licensing/server-side-public-license>.
 
 use async_trait::async_trait;
-use aws_sdk_cloudwatchlogs::Client;
+use aws_sdk_cloudwatchlogs::{model::OrderBy, Client};
 use chrono::{DateTime, Duration, Utc};
 use tokio::sync::mpsc;
 use tokio_stream::StreamExt;
+use tracing::{instrument, debug, debug_span};
 
 use crate::sources::LogReader;
 #[derive(Debug, Clone)]
 pub(crate) struct CloudwatchReader {
     client: Client,
-    log_stream: String,
+    log_stream: Option<String>,
+    log_group: String,
     since: DateTime<Utc>,
     until: DateTime<Utc>,
 }
 
 impl CloudwatchReader {
+    #[instrument(level = "trace")]
     pub async fn new(
         since: Option<DateTime<Utc>>,
         until: Option<DateTime<Utc>>,
         window: Option<Duration>,
-        log_stream: String,
+        log_stream: Option<String>,
+        log_group: String,
     ) -> CloudwatchReader {
         let client_config = Box::new(aws_config::load_from_env().await);
         let (start, end) = match window {
@@ -62,17 +66,40 @@ impl CloudwatchReader {
             since: start,
             until: end,
             log_stream,
+            log_group,
         }
     }
 }
 
 #[async_trait]
 impl LogReader for CloudwatchReader {
+    #[instrument(level = "trace", skip_all)]
     async fn read_logs(&self, lines: mpsc::UnboundedSender<String>) -> Result<(), anyhow::Error> {
+        let log_stream_name = if let Some(log_stream) = self.log_stream.clone() {
+            log_stream
+        } else {
+            debug!(%self.log_group, "No log stream specified, getting most recent for log group");
+            let streams = self
+                .client
+                .describe_log_streams()
+                .log_group_name(&self.log_group)
+                .order_by(OrderBy::LastEventTime)
+                .descending(true)
+                .limit(1)
+                .send()
+                .await?;
+            debug!(?streams, "got results");
+            streams.log_streams.expect("")[0]
+                .log_stream_name()
+                .expect("streams have names")
+                .to_string()
+        };
+        debug!(%log_stream_name, "starting event fetching");
         let mut event_fetcher = self
             .client
             .get_log_events()
-            .log_stream_name(self.log_stream.clone())
+            .log_group_name(self.log_group.clone())
+            .log_stream_name(log_stream_name)
             .set_start_time(Some(self.since.timestamp_millis()))
             .set_end_time(Some(self.until.timestamp_millis()))
             .start_from_head(true)
@@ -80,6 +107,7 @@ impl LogReader for CloudwatchReader {
             .send();
 
         while let Some(event) = event_fetcher.next().await {
+            let _span = debug_span!("sending line");
             if let Ok(log_events) = event {
                 for log_event in log_events.events().unwrap_or_default() {
                     lines.send(

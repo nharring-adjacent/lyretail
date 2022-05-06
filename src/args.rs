@@ -29,10 +29,14 @@ pub(crate) struct Args {
     /// Whether to watch files for changes when the end is reached
     #[clap(long)]
     pub follow: bool,
-    /// Cloudwatch Logstream to read from
+    /// Cloudwatch Log Group to use
     #[cfg(feature = "aws")]
-    #[clap(short, long)]
-    pub cloudwatch: Option<String>,
+    #[clap(long)]
+    pub cloudwatch_log_group: String,
+    /// Cloudwatch Logstream to read from, if not supplied will attempt to read from all streams in group
+    #[cfg(feature = "aws")]
+    #[clap(long)]
+    pub cloudwatch_log_strean: Option<String>,
     /// Timestamp to start reading from
     #[cfg(feature = "aws")]
     #[clap(parse(try_from_str = dateparser), short, long)]

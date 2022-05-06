@@ -70,17 +70,16 @@ impl LyreTail {
             #[cfg(feature = "aws")]
             crate::sources::SourceType::Cloudwatch => {
                 let args = self.args.lock();
-                let log_group = args
-                    .cloudwatch
-                    .clone()
-                    .expect("Must specify log stream when using cloudwatch sources");
+                let log_group = args.cloudwatch_log_group.clone();
+                let log_stream = args.cloudwatch_log_strean.clone();
                 let since = args.since.clone();
                 let until = args.until.clone();
                 let window = args.window.clone();
                 task::spawn(async move {
-                    let reader =
-                        aws::cloudwatch::CloudwatchReader::new(since, until, window, log_group)
-                            .await;
+                    let reader = aws::cloudwatch::CloudwatchReader::new(
+                        since, until, window, log_stream, log_group,
+                    )
+                    .await;
                     reader.read_logs(writer).await.unwrap();
                 });
             },

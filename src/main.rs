@@ -36,15 +36,15 @@ async fn main() {
         .unwrap();
 
     tracing_subscriber::registry()
-        .with(console_subscriber::spawn())
         .with(
             tracing_subscriber::fmt::layer()
                 .with_ansi(false)
-                .with_span_events(FmtSpan::ACTIVE)
+                .with_span_events(FmtSpan::ENTER)
                 .with_writer(Arc::new(log_file))
                 .compact()
                 .with_filter(filter_layer),
         )
+        .with(console_subscriber::spawn())
         .init();
 
     let args_inner = Args::parse();
