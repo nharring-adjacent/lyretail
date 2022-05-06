@@ -8,19 +8,20 @@
 // Server Side Public License along with this program.
 // If not, see <http://www.mongodb.com/licensing/server-side-public-license>.
 
-use std::{pin::Pin, sync::Arc};
+use std::sync::Arc;
 
-use crate::args::Args;
 use anyhow::Error;
 use drain_flow::SimpleDrain;
 use parking_lot::{Mutex, RwLock};
-use tokio::{
-    fs::File,
-    io::{stdin, AsyncBufRead, AsyncBufReadExt, BufReader},
-    runtime::Builder,
-};
-use tracing::{debug, instrument};
+use tokio::{sync::mpsc, task};
+use tracing::instrument;
 
+#[cfg(feature = "aws")]
+use crate::sources::aws;
+use crate::{
+    args::Args,
+    sources::{file::FileReader, LogReader},
+};
 #[derive(Clone, Debug)]
 pub(crate) struct LyreTail {
     drain: Arc<RwLock<SimpleDrain>>,
@@ -28,7 +29,7 @@ pub(crate) struct LyreTail {
 }
 
 impl LyreTail {
-    #[instrument]
+    #[instrument(level = "trace", skip_all)]
     pub(crate) fn create_app(
         drain: Option<Arc<RwLock<SimpleDrain>>>,
         args: Arc<Mutex<Args>>,
@@ -46,35 +47,60 @@ impl LyreTail {
     }
 
     pub(crate) fn get_drain_ref(&self) -> Arc<RwLock<SimpleDrain>> {
-        debug!("cloning drain");
         self.drain.clone()
     }
 
-    // Run encapsulates the main input loop which processes lines and updates the drain
+    // init_input sets up the async background tasks which read and process lines from the source
     //
-    #[instrument]
-    pub fn run(&self) {
-        let file = self.args.lock().source.clone();
+    #[instrument(level = "trace", skip_all)]
+    pub(crate) async fn init_input(&self) {
         let drain = self.get_drain_ref();
+
         let follow = self.args.lock().follow;
-        let io_runtime = Builder::new_current_thread().enable_all().build().unwrap();
-        std::thread::spawn(move || {
-            let mut reader = Box::pin(BufReader::new(stdin())) as Pin<Box<dyn AsyncBufRead>>;
-            if let Some(file_path) = file {
-                reader = io_runtime.block_on(async {
-                    Box::pin(BufReader::new(File::open(file_path).await.unwrap()))
+        let (writer, reader) = mpsc::unbounded_channel::<String>();
+        let source_type = self.args.lock().source_type;
+        match source_type {
+            crate::sources::SourceType::File => {
+                let file = self.args.lock().file.clone().unwrap();
+                task::spawn(async move {
+                    let reader = FileReader::new(&file, follow);
+                    reader.read_logs(writer).await.unwrap();
                 });
-            }
-            io_runtime.block_on(async {
-                let mut buffer = String::new();
-                while let Ok(b) = reader.read_line(&mut buffer).await {
-                    if b == 0 && !follow {
-                        break;
-                    }
-                    let _ = drain.write().process_line(buffer.clone()).unwrap();
-                    buffer.clear();
+            },
+            #[cfg(feature = "aws")]
+            crate::sources::SourceType::Cloudwatch => {
+                let args = self.args.lock();
+                let log_group = args.cloudwatch_log_group.clone();
+                let log_stream = args.cloudwatch_log_strean.clone();
+                let since = args.since.clone();
+                let until = args.until.clone();
+                let window = args.window.clone();
+                task::spawn(async move {
+                    let reader = aws::cloudwatch::CloudwatchReader::new(
+                        since, until, window, log_stream, log_group,
+                    )
+                    .await;
+                    reader.read_logs(writer).await.unwrap();
+                });
+            },
+        };
+
+        task::spawn(async move { process_lines(drain, reader).await });
+    }
+}
+
+#[instrument(skip_all, level = "trace")]
+async fn process_lines(
+    drain: Arc<RwLock<SimpleDrain>>,
+    mut drain_reader: mpsc::UnboundedReceiver<String>,
+) -> Result<(), anyhow::Error> {
+    loop {
+        tokio::select! {
+            maybe_line = drain_reader.recv() => {
+                if let Some(line) = maybe_line {
+                    drain.write().process_line(line)?;
                 }
-            });
-        });
+            }
+        }
     }
 }

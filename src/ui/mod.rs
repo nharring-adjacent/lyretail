@@ -8,38 +8,36 @@
 // Server Side Public License along with this program.
 // If not, see <http://www.mongodb.com/licensing/server-side-public-license>.
 
-use crossterm::event::{self, Event};
-use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
-use drain_flow::log_group::LogGroup;
-use tui::backend::Backend;
-use tui::Frame;
-
-use std::io::Stdout;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::thread::sleep;
-use std::{io::stdout, sync::Arc};
+use std::{
+    io::{stdout, Stdout},
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
+};
 
 use anyhow::Error;
 use chrono::Duration;
-
-use tracing::{debug, instrument, warn};
-use tui::{backend::CrosstermBackend, Terminal};
-
 use crossterm::{
+    event::{self, Event},
     execute,
-    terminal::{EnterAlternateScreen, LeaveAlternateScreen},
+    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+};
+use drain_flow::log_group::LogGroup;
+use tracing::{debug, instrument, warn};
+use tui::{
+    backend::{Backend, CrosstermBackend},
+    Frame,
+    Terminal,
 };
 
+use self::{base::BaseTable, log_group::LogGroupTab};
 use crate::app::LyreTail;
-
-use self::base::BaseTable;
-use self::log_group::LogGroupTab;
 
 mod base;
 mod log_group;
 
 pub(crate) struct Ui {
-    app: Arc<LyreTail>,
     base: BaseTable,
     stopping: Arc<AtomicBool>,
     state: UiState,
@@ -59,9 +57,9 @@ pub(crate) trait LyreUIWidget<B: Backend> {
     fn handle_events(&mut self, event: Event) -> UiState;
 }
 
-impl Ui {
-    // #[instrument(skip(app))]
-    pub fn new(app: Arc<LyreTail>) -> Result<Self, Error> {
+impl<'a> Ui {
+    #[instrument(level = "trace", skip_all)]
+    pub fn new<'b>(app: Arc<LyreTail>) -> Result<Self, Error> {
         // setup terminal
         let mut stdout = stdout();
         enable_raw_mode()?;
@@ -69,7 +67,6 @@ impl Ui {
         let backend = CrosstermBackend::new(stdout);
         let terminal = Terminal::new(backend)?;
         Ok(Self {
-            app: app.clone(),
             state: UiState::Base,
             stopping: Arc::new(AtomicBool::new(false)),
             base: BaseTable::new(app.clone()),
@@ -78,15 +75,14 @@ impl Ui {
         })
     }
 
-    #[instrument(skip(self))]
+    #[instrument(level = "trace", skip(self))]
     fn trigger_exit(&self) {
         warn!("Triggering program exit");
         self.stopping.store(true, Ordering::SeqCst);
     }
-    #[instrument(skip(self))]
+
+    #[instrument(level = "trace", skip(self))]
     pub(crate) fn run_ui(&mut self) -> Result<(), Error> {
-        let ui_args = self.app.args.clone();
-        let refresh = ui_args.lock().interval.num_milliseconds();
         loop {
             if self.stopping.load(Ordering::SeqCst) {
                 debug!("stopping flag seen, exiting loop");
@@ -101,7 +97,7 @@ impl Ui {
                     } else {
                         UiState::Base
                     }
-                }
+                },
                 UiState::LogGroup(log_group) => {
                     self.log_group = Some(log_group.clone());
                     let lg_view = LogGroupTab::new(log_group.clone());
@@ -112,13 +108,12 @@ impl Ui {
                     } else {
                         UiState::LogGroup(log_group.clone())
                     }
-                }
+                },
                 UiState::Exiting => {
                     self.stopping.store(true, Ordering::SeqCst);
                     UiState::Exiting
-                }
+                },
             };
-            sleep(Duration::milliseconds(refresh).to_std()?);
         }
         let _rs = debug!("restoring terminal");
         disable_raw_mode()?;

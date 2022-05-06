@@ -16,7 +16,7 @@ use std::sync::{
 use crossterm::event::{Event, KeyCode, KeyModifiers};
 use drain_flow::log_group::LogGroup;
 use itertools::Itertools;
-use tracing::{debug, instrument, warn};
+use tracing::{debug, info, instrument, warn};
 use tui::{
     backend::Backend,
     layout::{Constraint, Layout},
@@ -25,9 +25,8 @@ use tui::{
     Frame,
 };
 
-use crate::app::LyreTail;
-
 use super::UiState;
+use crate::app::LyreTail;
 
 #[derive(Clone, Debug)]
 pub(crate) struct BaseTable {
@@ -36,17 +35,13 @@ pub(crate) struct BaseTable {
     app: Arc<LyreTail>,
 }
 
-impl BaseTable {
+impl<'a> BaseTable {
     pub(crate) fn new(app: Arc<LyreTail>) -> Self {
         Self {
             row_count: Arc::new(AtomicUsize::new(0)),
             state: TableState::default(),
             app: app.clone(),
         }
-    }
-
-    fn trigger_exit(&self) {
-        // self.stopping.store(true, Ordering::SeqCst);
     }
 
     #[instrument(skip(self, f))]
@@ -102,34 +97,41 @@ impl BaseTable {
         if let Event::Key(key) = event {
             match key.code {
                 KeyCode::Up => {
+                    debug!("key up handler");
                     let selected = self.state.selected();
                     if let Some(selected) = selected {
-                        debug!(%selected, "key up processing");
+                        info!(%selected, %rows, "change selection");
                         // When navigating a list up is down and we stop at 0
                         if selected > 0 {
+                            info!("setting selection to {}", selected - 1);
                             self.state.select(Some(selected - 1));
                         }
+                    } else {
+                        info!("nothing selected key up");
+                        self.state.select(Some(0));
                     }
-                    debug!("nothing selected key up");
-                    self.state.select(Some(0));
                     return UiState::Base;
-                }
+                },
                 KeyCode::Down => {
+                    debug!("key down handler");
                     let selected = self.state.selected();
                     if let Some(selected) = selected {
-                        warn!(%selected, "key down processing");
+                        info!(%selected, %rows, "change selection");
                         if selected < rows {
+                            info!("setting selection to {}", selected + 1);
                             self.state.select(Some(selected + 1));
                         }
+                    } else {
+                        info!("nothing selected, setting {}", rows - 1);
+                        self.state.select(Some(rows - 1));
                     }
-                    debug!("nothing selected key down");
-                    self.state.select(Some(rows - 1));
+
                     return UiState::Base;
-                }
+                },
                 KeyCode::Esc => {
                     debug!("key esc");
                     return UiState::Exiting;
-                }
+                },
                 KeyCode::Char(c) => {
                     // Ctrl-C, q and Esc all trigger exit
                     if (c == 'c' && key.modifiers.contains(KeyModifiers::CONTROL)) || c == 'q' {
@@ -138,7 +140,7 @@ impl BaseTable {
                     } else {
                         return UiState::Base;
                     }
-                }
+                },
                 KeyCode::Enter => {
                     if let Some(selected) = self.state.selected() {
                         let lg = self.get_selected(selected);
@@ -146,11 +148,11 @@ impl BaseTable {
                     } else {
                         return UiState::Base;
                     }
-                }
+                },
                 u => {
                     warn!(?u, "Unknown key");
                     return UiState::Base;
-                }
+                },
             }
         }
         UiState::Base

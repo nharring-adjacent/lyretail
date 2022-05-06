@@ -10,23 +10,59 @@
 
 use std::path::PathBuf;
 
-use chrono::Duration;
-use clap::Parser;
+use chrono::{DateTime, Duration, Utc};
+use clap::{ErrorKind, Parser};
+use dateparser::parse as dateparser;
 use duration_str::parse_chrono;
+use tracing::instrument;
 
+use crate::sources::SourceType;
 #[derive(Parser, Debug, Clone)]
 #[clap(author, version, about, long_about = None)]
 pub(crate) struct Args {
-    /// Enable periodic printing of LogGroup information
-    #[clap(short, long)]
-    pub periodic: bool,
-    /// The interval between updates
-    #[clap(parse(try_from_str = parse_chrono), short, long, default_value="1s")]
-    pub interval: Duration,
-    /// The source of input, read from stdin if not specified
-    #[clap(short, long)]
-    pub source: Option<PathBuf>,
+    /// The type of source to read from
+    #[clap(arg_enum, long)]
+    pub source_type: SourceType,
+    /// File path to read from, default to stdin if source_type is file
+    #[clap(long)]
+    pub file: Option<PathBuf>,
     /// Whether to watch files for changes when the end is reached
-    #[clap(short, long)]
+    #[clap(long)]
     pub follow: bool,
+    /// Cloudwatch Log Group to use
+    #[cfg(feature = "aws")]
+    #[clap(long)]
+    pub cloudwatch_log_group: String,
+    /// Cloudwatch Logstream to read from, if not supplied will attempt to read from all streams in group
+    #[cfg(feature = "aws")]
+    #[clap(long)]
+    pub cloudwatch_log_strean: Option<String>,
+    /// Timestamp to start reading from
+    #[cfg(feature = "aws")]
+    #[clap(parse(try_from_str = dateparser), short, long)]
+    pub since: Option<DateTime<Utc>>,
+    /// Timestamp to stop reading at
+    #[cfg(feature = "aws")]
+    #[clap(parse(try_from_str = dateparser), short, long)]
+    pub until: Option<DateTime<Utc>>,
+    #[cfg(feature = "aws")]
+    #[clap(parse(try_from_str = parse_chrono), short, long)]
+    pub window: Option<Duration>,
+}
+
+impl Args {
+    /// Run complex validation on arguments
+    #[instrument(level = "trace")]
+    pub fn validate(&self) -> Result<(), clap::ErrorKind> {
+        match self.source_type {
+            SourceType::File => {},
+            #[cfg(feature = "aws")]
+            SourceType::Cloudwatch => {
+                if self.window.is_some() && (self.since.is_some() || self.until.is_some()) {
+                    return Err(ErrorKind::ArgumentConflict);
+                }
+            },
+        }
+        Ok(())
+    }
 }
