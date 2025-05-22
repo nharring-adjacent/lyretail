@@ -8,7 +8,6 @@
 // Server Side Public License along with this program.
 // If not, see <http://www.mongodb.com/licensing/server-side-public-license>.
 
-#![feature(associated_type_bounds)]
 extern crate enum_kinds;
 extern crate tracing;
 mod app;
@@ -20,7 +19,7 @@ use std::{fs::File, sync::Arc};
 
 use app::LyreTail;
 use clap::{CommandFactory, Parser};
-use drain_flow::SimpleDrain;
+use drain_flow::drains::simple::SingleLayer;
 use parking_lot::{Mutex, RwLock};
 use tracing::debug;
 use tracing_subscriber::{fmt::format::FmtSpan, prelude::*, EnvFilter};
@@ -58,7 +57,7 @@ async fn main() {
     };
     debug!("validated args");
     let args = Arc::new(Mutex::new(args_inner));
-    let drain = Arc::new(RwLock::new(SimpleDrain::new(vec![]).unwrap()));
+    let drain = Arc::new(RwLock::new(SingleLayer::new(vec![]).unwrap()));
     debug!("got drain");
     let app = LyreTail::create_app(Some(drain), args).unwrap();
     debug!("got app");

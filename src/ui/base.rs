@@ -167,8 +167,7 @@ impl<'a> BaseTable {
             .flatten()
             .sorted_by(|a, b| Ord::cmp(&b.len(), &a.len()))
             .nth(idx)
+            .map(|double_ref| (*double_ref).clone())
             .expect("idx is based on selected, should exist")
-            .clone()
-            .to_owned()
     }
 }
