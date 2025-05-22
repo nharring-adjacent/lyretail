@@ -11,7 +11,7 @@
 use std::sync::Arc;
 
 use anyhow::Error;
-use drain_flow::SimpleDrain;
+use drain_flow::drains::simple::SingleLayer;
 use parking_lot::{Mutex, RwLock};
 use tokio::{sync::mpsc, task};
 use tracing::instrument;
@@ -24,21 +24,21 @@ use crate::{
 };
 #[derive(Clone, Debug)]
 pub(crate) struct LyreTail {
-    drain: Arc<RwLock<SimpleDrain>>,
+    drain: Arc<RwLock<SingleLayer>>,
     pub args: Arc<Mutex<Args>>,
 }
 
 impl LyreTail {
     #[instrument(level = "trace", skip_all)]
     pub(crate) fn create_app(
-        drain: Option<Arc<RwLock<SimpleDrain>>>,
+        drain: Option<Arc<RwLock<SingleLayer>>>,
         args: Arc<Mutex<Args>>,
     ) -> Result<Self, Error> {
         Ok(Self {
             drain: drain
                 .or_else(|| {
                     Some(Arc::new(RwLock::new(
-                        SimpleDrain::new(vec![]).expect("creating new drain should work"),
+                        SingleLayer::new(vec![]).expect("creating new drain should work"),
                     )))
                 })
                 .unwrap(),
@@ -46,7 +46,7 @@ impl LyreTail {
         })
     }
 
-    pub(crate) fn get_drain_ref(&self) -> Arc<RwLock<SimpleDrain>> {
+    pub(crate) fn get_drain_ref(&self) -> Arc<RwLock<SingleLayer>> {
         self.drain.clone()
     }
 
@@ -91,7 +91,7 @@ impl LyreTail {
 
 #[instrument(skip_all, level = "trace")]
 async fn process_lines(
-    drain: Arc<RwLock<SimpleDrain>>,
+    drain: Arc<RwLock<SingleLayer>>,
     mut drain_reader: mpsc::UnboundedReceiver<String>,
 ) -> Result<(), anyhow::Error> {
     loop {

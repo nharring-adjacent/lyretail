@@ -10,10 +10,7 @@
 
 use std::path::PathBuf;
 
-use chrono::{DateTime, Duration, Utc};
-use clap::{ErrorKind, Parser};
-use dateparser::parse as dateparser;
-use duration_str::parse_chrono;
+use clap::Parser;
 use tracing::instrument;
 
 use crate::sources::SourceType;
