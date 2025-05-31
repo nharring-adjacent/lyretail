@@ -68,3 +68,4 @@ async fn main() {
     debug!("got ui");
     ui.run_ui().unwrap();
 }
+pub mod dioxus_ui;

@@ -20,3 +20,31 @@ This recording was generated using the demo.sh with no arguments on a Macbook ai
 [Lyretail Coralfish](https://en.wikipedia.org/wiki/Sea_goldie) are members of the grouper (and sea bass!) family, and in my mind
 that's what this tool does: it groups lines! There are many groupers, but this is the only one with `tail` in its name which seemed
 too fitting not to use!
+
+## Development Setup
+
+This project is currently undergoing a migration of its UI from a terminal-based interface (TUI) to a web-based/desktop UI using Dioxus.
+
+To work on the Dioxus UI components, you'll need the Dioxus CLI:
+
+1.  **Install `cargo-binstall`**:
+    ```bash
+    cargo install cargo-binstall
+    ```
+    This utility helps install Rust binary crates.
+
+2.  **Install `dioxus-cli`**:
+    ```bash
+    cargo binstall dioxus-cli --locked
+    ```
+    The Dioxus CLI provides tools for building and serving Dioxus applications (e.g., the `dx` command).
+
+You may also need to install system dependencies for `gtk` and `webkit` if you intend to build or check `dioxus-desktop` components. On Debian/Ubuntu-based systems, these can typically be installed with:
+```bash
+sudo apt-get update
+sudo apt-get install libgtk-3-dev libwebkit2gtk-4.1-dev
+```
+
+## UI Migration Disclaimer
+
+The user interface of LyreTail is currently being migrated. New UI components are being developed using the Dioxus framework. These components are not yet fully integrated into the application and are considered experimental. The existing TUI remains the primary interface for now.
