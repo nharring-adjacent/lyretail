@@ -30,7 +30,7 @@ pub struct LyreTail {
 
 impl LyreTail {
     #[instrument(level = "trace", skip_all)]
-    pub(crate) fn create_app(
+    pub fn create_app(
         drain: Option<Arc<RwLock<SingleLayer>>>,
         args: Arc<Mutex<Args>>,
     ) -> Result<Self, Error> {
@@ -46,14 +46,14 @@ impl LyreTail {
         })
     }
 
-    pub(crate) fn get_drain_ref(&self) -> Arc<RwLock<SingleLayer>> {
+    pub fn get_drain_ref(&self) -> Arc<RwLock<SingleLayer>> {
         self.drain.clone()
     }
 
     // init_input sets up the async background tasks which read and process lines from the source
     //
     #[instrument(level = "trace", skip_all)]
-    pub(crate) async fn init_input(&self) {
+    pub async fn init_input(&self) {
         let drain = self.get_drain_ref();
         let (writer, reader) = mpsc::unbounded_channel::<String>();
 
