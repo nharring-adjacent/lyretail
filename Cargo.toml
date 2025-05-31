@@ -9,7 +9,7 @@ authors = ["Nicholas Harring <nharring@gmail.com>"]
 [features]
 aws = ["dep:aws-config", "dep:aws-sdk-cloudwatchlogs", "dep:aws-sdk-s3", "dep:aws-types"]
 default = ["native-deps"]
-native-deps = ["ctrlc", "console-subscriber", "rfd", "tokio/net", "mio/net", "mio/os-poll", "mio/os-ext"]
+native-deps = ["ctrlc", "console-subscriber", "rfd", "tokio/net", "mio/net", "mio/os-poll", "mio/os-ext", "tokio/tracing"]
 
 [dependencies]
 anyhow = "1.0.57"
@@ -31,7 +31,7 @@ macro-attr = "0.2"
 mio = { version = "1.0.3", default-features = false }
 parking_lot = "0.12.0"
 rfd = { version = "0.11", optional = true }
-tokio = { version = "1.18.1", default-features = false, features = ["rt", "macros", "time", "sync", "tracing"] }
+tokio = { version = "1.18.1", default-features = false, features = ["rt", "macros", "time", "sync"] }
 tokio-util = { version = "0.7", features = ["rt"] }
 tokio-stream = "0.1.8"
 tracing = "0.1.34"
