@@ -16,7 +16,7 @@ use tracing::instrument;
 use crate::sources::SourceType;
 #[derive(Parser, Debug, Clone)]
 #[clap(author, version, about, long_about = None)]
-pub(crate) struct Args {
+pub struct Args {
     /// The type of source to read from
     #[clap(arg_enum, long)]
     pub source_type: SourceType,

@@ -23,7 +23,7 @@ use crate::{
     sources::{file::FileReader, LogReader},
 };
 #[derive(Clone, Debug)]
-pub(crate) struct LyreTail {
+pub struct LyreTail {
     drain: Arc<RwLock<SingleLayer>>,
     pub args: Arc<Mutex<Args>>,
 }
