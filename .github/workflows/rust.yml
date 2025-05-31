@@ -19,17 +19,10 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
-        target: wasm32-unknown-unknown # Install wasm target
         profile: minimal
-
-    - name: Install wasm-pack
-      run: cargo install wasm-pack
 
     - name: Build native application
       run: cargo build --verbose
 
     - name: Run native tests
       run: cargo test --verbose
-
-    - name: Build WebAssembly package
-      run: wasm-pack build --target web

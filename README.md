@@ -1,6 +1,6 @@
 # lyretail
 
-Lyretail is a streaming text parser and categorizer based on the "Drain" algorithm, now featuring a user interface built with Dioxus for both desktop and web.
+Lyretail is a streaming text parser and categorizer based on the "Drain" algorithm, featuring a user interface built with Dioxus for desktop.
 
 ## What it does
 
@@ -12,7 +12,9 @@ If you have a service generating a large volume of log data without a consistent
 
 ## Architecture
 
-The core log processing logic is handled by the `drain-flow` crate. The user interface is built using the [Dioxus](https://dioxuslabs.com/) framework, allowing Lyretail to run as a native desktop application and as a web application in any modern browser.
+The core log processing logic is handled by the `drain-flow` crate. The user interface is built using the [Dioxus](https://dioxuslabs.com/) framework for the native desktop application.
+
+*Note on WebAssembly (Wasm) Support:* Initial work to support a Wasm-based web application was undertaken but has been temporarily paused due to complexities in the build process with current dependencies. Future efforts may revisit web support. The primary focus is currently the desktop application.
 
 ## Development Setup
 
@@ -43,36 +45,6 @@ Other operating systems will have similar requirements for GTK and WebKit develo
     ./target/release/lyretail --source-type file --file /path/to/your/logfile.log
     ```
     If no arguments are provided, it might default to requiring a file selection via a dialog or specific default behavior. (Note: The current implementation parses arguments; behavior without them depends on `args.rs` and `main.rs` logic).
-
-
-### Building and Running the Web Application
-
-The web application is compiled to WebAssembly (Wasm). You'll need `wasm-pack`.
-
-1.  **Install `wasm-pack`** (if you haven't already):
-    ```bash
-    cargo install wasm-pack
-    ```
-
-2.  **Build the Wasm package:**
-    Navigate to the root of the project directory and run:
-    ```bash
-    wasm-pack build --target web
-    ```
-    This will create a `pkg` directory containing the Wasm binary and JavaScript bindings.
-
-3.  **Serve the Web Application:**
-    You'll need a simple HTTP server to serve the `index.html` and the `pkg` directory.
-    If you have Python installed:
-    ```bash
-    python -m http.server 8080
-    ```
-    Or using `miniserve`:
-    ```bash
-    cargo install miniserve
-    miniserve . --index index.html --port 8080
-    ```
-    Then open your browser and navigate to `http://localhost:8080`.
 
 ## What's with the name?
 [Lyretail Coralfish](https://en.wikipedia.org/wiki/Sea_goldie) are members of the grouper (and sea bass!) family, and in my mind
