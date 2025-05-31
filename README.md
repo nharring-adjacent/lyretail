@@ -1,50 +1,80 @@
 # lyretail
-Lyretail is a streaming text parser and categorizer based on the "Drain" algorithm.
 
-Right now this is barely past the proof of concept stage, it was initially written entirely to provide a test-harness for using the `drain-flow` crate which does the actual algorithm implementation and took this form since I have occasionally wished for this tool when not working in places which have their own version. 
+Lyretail is a streaming text parser and categorizer based on the "Drain" algorithm, now featuring a user interface built with Dioxus for both desktop and web.
 
 ## What it does
-lyretail consumes a stream of input lines, tokenizes them and then processes them according to the Drain algorithm as implemented in the crate [drain-flow](https://github.com/nharring-adjacent/drain-flow). Periodically lyretail will output meta-data about the lines it has processed and the buckets they have sorted into. This stream can either be a file supplied with the `--file=<Path>` option or from stdin which is the default.
 
-When reading a static file a summary of the process will be printed to `stdout` including all discovered events and how many times they matched, when reading from stdin this will occur when you hit ctrl-c. In both cases it is also possible to have this output printed periodically by specifying `--periodic` and optionally picking an interval with `--interval`.
+Lyretail consumes a stream of input lines (from files or eventually other sources like AWS CloudWatch), tokenizes them, and then processes them according to the Drain algorithm as implemented in the crate [drain-flow](https://github.com/nharring-adjacent/drain-flow). The application displays metadata about the processed lines and the event groups they are sorted into.
 
 ## Why would I use it?
-Say you've got a busy instance of a service writing a huge amount of log data and you want to get a general idea of what its logging about. Unless you're really lucky there probably isn't a consistent format to the output, and most tools like logstash required at least some operator guidance on what patterns to apply.
-Lyretail is different, requiring no upfront knowledge of stream contents and streadily sifting out the constant portions of log messages from the variable parts. 
 
-## Example usage
-This recording was generated using the demo.sh with no arguments on a Macbook air which has `/var/log/wifi.log`.
-[![asciicast](https://asciinema.org/a/481881.png)](https://asciinema.org/a/481881?autoplay=1&preload=1)
+If you have a service generating a large volume of log data without a consistent format, Lyretail can help you understand the general patterns and common messages. Unlike tools that require predefined parsing rules, Lyretail attempts to automatically sift out the constant parts of log messages from the variable parts.
+
+## Architecture
+
+The core log processing logic is handled by the `drain-flow` crate. The user interface is built using the [Dioxus](https://dioxuslabs.com/) framework, allowing Lyretail to run as a native desktop application and as a web application in any modern browser.
+
+## Development Setup
+
+To build and run Lyretail, you'll need Rust installed.
+
+### Common Dependencies
+
+Ensure you have the necessary system dependencies for `dioxus-desktop`. On Debian/Ubuntu-based systems, these can typically be installed with:
+```bash
+sudo apt-get update
+sudo apt-get install libgtk-3-dev libwebkit2gtk-4.1-dev
+```
+Other operating systems will have similar requirements for GTK and WebKit development libraries.
+
+### Building and Running the Desktop Application
+
+1.  **Build:**
+    ```bash
+    cargo build --release
+    ```
+2.  **Run:**
+    The executable will be located at `target/release/lyretail`.
+    ```bash
+    ./target/release/lyretail [OPTIONS]
+    ```
+    You can pass command-line arguments as defined (e.g., for specifying a file source). For example:
+    ```bash
+    ./target/release/lyretail --source-type file --file /path/to/your/logfile.log
+    ```
+    If no arguments are provided, it might default to requiring a file selection via a dialog or specific default behavior. (Note: The current implementation parses arguments; behavior without them depends on `args.rs` and `main.rs` logic).
+
+
+### Building and Running the Web Application
+
+The web application is compiled to WebAssembly (Wasm). You'll need `wasm-pack`.
+
+1.  **Install `wasm-pack`** (if you haven't already):
+    ```bash
+    cargo install wasm-pack
+    ```
+
+2.  **Build the Wasm package:**
+    Navigate to the root of the project directory and run:
+    ```bash
+    wasm-pack build --target web
+    ```
+    This will create a `pkg` directory containing the Wasm binary and JavaScript bindings.
+
+3.  **Serve the Web Application:**
+    You'll need a simple HTTP server to serve the `index.html` and the `pkg` directory.
+    If you have Python installed:
+    ```bash
+    python -m http.server 8080
+    ```
+    Or using `miniserve`:
+    ```bash
+    cargo install miniserve
+    miniserve . --index index.html --port 8080
+    ```
+    Then open your browser and navigate to `http://localhost:8080`.
 
 ## What's with the name?
 [Lyretail Coralfish](https://en.wikipedia.org/wiki/Sea_goldie) are members of the grouper (and sea bass!) family, and in my mind
 that's what this tool does: it groups lines! There are many groupers, but this is the only one with `tail` in its name which seemed
 too fitting not to use!
-
-## Development Setup
-
-This project is currently undergoing a migration of its UI from a terminal-based interface (TUI) to a web-based/desktop UI using Dioxus.
-
-To work on the Dioxus UI components, you'll need the Dioxus CLI:
-
-1.  **Install `cargo-binstall`**:
-    ```bash
-    cargo install cargo-binstall
-    ```
-    This utility helps install Rust binary crates.
-
-2.  **Install `dioxus-cli`**:
-    ```bash
-    cargo binstall dioxus-cli --locked
-    ```
-    The Dioxus CLI provides tools for building and serving Dioxus applications (e.g., the `dx` command).
-
-You may also need to install system dependencies for `gtk` and `webkit` if you intend to build or check `dioxus-desktop` components. On Debian/Ubuntu-based systems, these can typically be installed with:
-```bash
-sudo apt-get update
-sudo apt-get install libgtk-3-dev libwebkit2gtk-4.1-dev
-```
-
-## UI Migration Disclaimer
-
-The user interface of LyreTail is currently being migrated. New UI components are being developed using the Dioxus framework. These components are not yet fully integrated into the application and are considered experimental. The existing TUI remains the primary interface for now.

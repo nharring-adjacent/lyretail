@@ -1,2 +1,5 @@
+[target.wasm32-unknown-unknown]
+runner = ["wasm-bindgen-test-runner"] # For running wasm tests, not strictly needed for build
+
 [build]
-rustflags = ["--cfg", "tokio_unstable"]
+target = "wasm32-unknown-unknown"    # Sets the default target for wasm-pack if not specified
