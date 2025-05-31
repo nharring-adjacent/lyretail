@@ -12,27 +12,20 @@ pub enum DioxusUiState {
     LogGroupSelected(LogGroupDetailProps),
 }
 
+#[derive(Props, PartialEq, Clone)]
+pub struct AppProps {
+    pub log_groups: Vec<LogGroupSummaryProps>,
+}
+
 // This is the main application component for the Dioxus UI.
 // It's not launched, just defined.
-pub fn App(cx: Scope) -> Element {
+pub fn App(cx: Scope<AppProps>) -> Element {
     // For now, let's just show the BaseTable with sample data
     // and the LogGroupView with sample data or as empty.
     // In a real app, state would determine which view is more prominent
     // or if LogGroupView is shown at all.
 
-    let sample_log_groups = vec![
-        LogGroupSummaryProps {
-            id: "group_1".to_string(),
-            event_summary: "User logged in".to_string(),
-            quantity_seen: 10,
-        },
-        LogGroupSummaryProps {
-            id: "group_2".to_string(),
-            event_summary: "File not found".to_string(),
-            quantity_seen: 5,
-        },
-    ];
-
+    // Sample data for LogGroupView is kept for now.
     let selected_log_group_sample = LogGroupDetailProps {
         id: "group_1_detail".to_string(),
         template: "User <*> logged in from <*>".to_string(),
@@ -42,11 +35,12 @@ pub fn App(cx: Scope) -> Element {
     cx.render(rsx! {
         div {
             h1 { "LyreTail - Dioxus UI Shell" }
-            BaseTable { log_groups: sample_log_groups }
+            BaseTable { log_groups: cx.props.log_groups.clone() }
             hr {}
-            LogGroupView { log_group: selected_log_group_sample } // Corrected based on previous learning
+            // For LogGroupView, we use selected_log_group prop name
+            LogGroupView { selected_log_group: Some(selected_log_group_sample) }
             hr {}
-            LogGroupView { } // Example of no log group selected
+            LogGroupView { selected_log_group: None } // Example of no log group selected
         }
     })
 }
