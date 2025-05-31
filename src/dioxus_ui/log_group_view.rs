@@ -8,34 +8,33 @@ use dioxus::prelude::*;
 pub struct LogGroupDetailProps {
     pub id: String,
     pub template: String, // Example: "User <*> logged in from <*>"
-    pub occurrences: usize,
+    pub occurrences: u32,
     // We might want to display a few sample raw log lines later
     // pub sample_lines: Vec<String>,
 }
 
 #[derive(Props, PartialEq, Clone)]
 pub struct LogGroupViewProps {
-    pub log_group: Option<LogGroupDetailProps>, // Option because a group might not be selected
+    pub selected_log_group: Option<LogGroupDetailProps>, // Option because a group might not be selected
 }
 
 pub fn LogGroupView(cx: Scope<LogGroupViewProps>) -> Element {
-    if let Some(details) = &cx.props.log_group {
-        cx.render(rsx! {
+    match &cx.props.selected_log_group {
+        Some(details) => cx.render(rsx! {
             div {
-                h2 { "Log Group Details (Dioxus)" }
-                p { "ID: {details.id}" }
-                p { "Template: {details.template}" }
-                p { "Occurrences: {details.occurrences}" }
-                // Placeholder for future elements like sample lines or navigation buttons
+                class: "p-4 border rounded shadow-md",
+                h2 { class: "text-xl font-semibold mb-2", "Log Group Details" }
+                div { class: "mb-1", strong { "ID: " } "{details.id}" }
+                div { class: "mb-1", strong { "Template: " } "{details.template}" }
+                div { strong { "Occurrences: " } "{details.occurrences}" }
             }
-        })
-    } else {
-        cx.render(rsx! {
+        }),
+        None => cx.render(rsx! {
             div {
-                h2 { "Log Group Details (Dioxus)" }
-                p { "No log group selected." }
+                class: "p-4 border rounded shadow-md text-gray-500",
+                "No log group selected"
             }
-        })
+        }),
     }
 }
 
@@ -44,10 +43,21 @@ fn _example_usage(cx: Scope) -> Element {
     let sample_detail = LogGroupDetailProps {
         id: "group_1".to_string(),
         template: "User <*> logged in from <*>".to_string(),
-        occurrences: 10,
+        occurrences: 10, // Note: This example occurrence will be u32
     };
+
+    // Explicitly create LogGroupViewProps for the example
+    let props_for_selected_example = LogGroupViewProps {
+        selected_log_group: Some(sample_detail.clone()) // Clone sample data
+    };
+    let props_for_empty_example = LogGroupViewProps {
+        selected_log_group: None
+    };
+
     cx.render(rsx! {
-        LogGroupView { log_group: sample_detail }
-        LogGroupView {} // For the None case, rely on default
+        // Use spread syntax for props in the example
+        LogGroupView { ..props_for_selected_example }
+        br {} // Added a line break for visual separation in example output
+        LogGroupView { ..props_for_empty_example }
     })
 }

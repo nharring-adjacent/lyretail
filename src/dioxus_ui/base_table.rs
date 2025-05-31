@@ -8,7 +8,7 @@ use dioxus::prelude::*;
 pub struct LogGroupSummaryProps {
     pub id: String,
     pub event_summary: String,
-    pub quantity_seen: usize,
+    pub quantity_seen: u32,
 }
 
 #[derive(Props, PartialEq, Clone)]
@@ -21,29 +21,25 @@ pub struct BaseTableProps {
 
 pub fn BaseTable(cx: Scope<BaseTableProps>) -> Element {
     cx.render(rsx! {
-        div {
-            h2 { "Log Groups (Dioxus)" }
-            table {
-                thead {
-                    tr {
-                        th { "ID" }
-                        th { "Event" }
-                        th { "Quantity Seen" }
-                    }
-                }
-                tbody {
-                    {cx.props.log_groups.iter().map(|lg| rsx! {
-                        tr {
-                            key: "{lg.id}",
-                            td { "{lg.id}" }
-                            td { "{lg.event_summary}" }
-                            td { "{lg.quantity_seen}" }
-                        }
-                    })}
+        table {
+            class: "table-auto w-full",
+            thead {
+                tr {
+                    th { class: "px-4 py-2", "ID" }
+                    th { class: "px-4 py-2", "Event Summary" }
+                    th { class: "px-4 py-2", "Quantity Seen" }
                 }
             }
-            // Placeholder for future interactions, e.g., keyboard navigation
-            // For now, no interactive elements are implemented.
+            tbody {
+                {cx.props.log_groups.iter().map(|log_group| rsx! {
+                    tr {
+                        key: "{log_group.id}",
+                        td { class: "border px-4 py-2", "{log_group.id}" }
+                        td { class: "border px-4 py-2", "{log_group.event_summary}" }
+                        td { class: "border px-4 py-2", "{log_group.quantity_seen}" }
+                    }
+                })}
+            }
         }
     })
 }
