@@ -10,13 +10,26 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
-
+  build_and_test: # Renamed job for clarity
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v4
-    - name: Build
+
+    - name: Install Rust toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        target: wasm32-unknown-unknown # Install wasm target
+        profile: minimal
+
+    - name: Install wasm-pack
+      run: cargo install wasm-pack
+
+    - name: Build native application
       run: cargo build --verbose
-    - name: Run tests
+
+    - name: Run native tests
       run: cargo test --verbose
+
+    - name: Build WebAssembly package
+      run: wasm-pack build --target web
