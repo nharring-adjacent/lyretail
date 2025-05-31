@@ -8,14 +8,16 @@ authors = ["Nicholas Harring <nharring@gmail.com>"]
 
 [features]
 aws = ["dep:aws-config", "dep:aws-sdk-cloudwatchlogs", "dep:aws-sdk-s3", "dep:aws-types"]
+default = ["native-deps"]
+native-deps = ["ctrlc", "console-subscriber", "rfd", "tokio/net"]
 
 [dependencies]
 anyhow = "1.0.57"
 async-trait = "0.1.53"
 chrono = "0.4.19"
 clap = { version = "3.1.15", features = ["derive", "wrap_help"] }
-console-subscriber = "0.1.5"
-ctrlc = "3.2.2"
+console-subscriber = { version = "0.1.5", optional = true }
+ctrlc = { version = "3.2.2", optional = true }
 dateparser = "0.1.6"
 duration-str = "0.3"
 drain-flow = { git = "https://github.com/nharring-adjacent/drain-flow" }
@@ -27,8 +29,8 @@ itertools = "0.10.3"
 joinery = "2.1.0"
 macro-attr = "0.2"
 parking_lot = "0.12.0"
-rfd = "0.11"
-tokio = { version = "1.18.1", features = ["full", "tracing"] }
+rfd = { version = "0.11", optional = true }
+tokio = { version = "1.18.1", default-features = false, features = ["rt", "macros", "time", "sync", "tracing"] }
 tokio-util = { version = "0.7", features = ["rt"] }
 tokio-stream = "0.1.8"
 tracing = "0.1.34"
@@ -46,3 +48,7 @@ wasm-bindgen = "0.2"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-logger = "0.2"
+console_error_panic_hook = "0.1.7"
