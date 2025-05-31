@@ -1,12 +1,11 @@
-use dioxus::prelude::*;
 use dioxus_desktop::Config;
 use rfd::FileDialog;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
 
-use lyratail::dioxus_ui::app::{App, AppProps};
-use lyratail::dioxus_ui::base_table::LogGroupSummaryProps;
+use lyretail::dioxus_ui::app::{App, AppProps};
+use lyretail::dioxus_ui::base_table::LogGroupSummaryProps;
 
 fn open_file_dialog() -> Option<PathBuf> {
     FileDialog::new()
@@ -49,6 +48,6 @@ fn main() {
     dioxus_desktop::launch_with_props(
         App,
         AppProps { log_groups: log_groups_data },
-        Config::new().with_window(dioxus_desktop::WindowBuilder::new().with_title("Lyratail Log Analyzer Desktop"))
+        Config::new().with_window(dioxus_desktop::WindowBuilder::new().with_title("Lyretail Log Analyzer Desktop"))
     );
 }

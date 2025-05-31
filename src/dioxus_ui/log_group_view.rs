@@ -45,8 +45,19 @@ fn _example_usage(cx: Scope) -> Element {
         template: "User <*> logged in from <*>".to_string(),
         occurrences: 10, // Note: This example occurrence will be u32
     };
+
+    // Explicitly create LogGroupViewProps for the example
+    let props_for_selected_example = LogGroupViewProps {
+        selected_log_group: Some(sample_detail.clone()) // Clone sample data
+    };
+    let props_for_empty_example = LogGroupViewProps {
+        selected_log_group: None
+    };
+
     cx.render(rsx! {
-        LogGroupView { selected_log_group: Some(sample_detail) }
-        LogGroupView { selected_log_group: None }
+        // Use spread syntax for props in the example
+        LogGroupView { ..props_for_selected_example }
+        br {} // Added a line break for visual separation in example output
+        LogGroupView { ..props_for_empty_example }
     })
 }

@@ -3,7 +3,8 @@
 
 use dioxus::prelude::*;
 use crate::dioxus_ui::base_table::{BaseTable, LogGroupSummaryProps};
-use crate::dioxus_ui::log_group_view::{LogGroupView, LogGroupDetailProps};
+// Import LogGroupViewProps alongside LogGroupView and LogGroupDetailProps
+use crate::dioxus_ui::log_group_view::{LogGroupView, LogGroupDetailProps, LogGroupViewProps};
 
 // Define a simple enum for the view state, similar to the TUI's UiState
 // We won't implement the logic to switch states yet.
@@ -18,13 +19,7 @@ pub struct AppProps {
 }
 
 // This is the main application component for the Dioxus UI.
-// It's not launched, just defined.
 pub fn App(cx: Scope<AppProps>) -> Element {
-    // For now, let's just show the BaseTable with sample data
-    // and the LogGroupView with sample data or as empty.
-    // In a real app, state would determine which view is more prominent
-    // or if LogGroupView is shown at all.
-
     // Sample data for LogGroupView is kept for now.
     let selected_log_group_sample = LogGroupDetailProps {
         id: "group_1_detail".to_string(),
@@ -32,15 +27,23 @@ pub fn App(cx: Scope<AppProps>) -> Element {
         occurrences: 10,
     };
 
+    // Explicitly create LogGroupViewProps
+    let props_for_selected_view = LogGroupViewProps {
+        selected_log_group: Some(selected_log_group_sample.clone()) // Clone sample data for ownership
+    };
+    let props_for_empty_view = LogGroupViewProps {
+        selected_log_group: None
+    };
+
     cx.render(rsx! {
         div {
             h1 { "LyreTail - Dioxus UI Shell" }
             BaseTable { log_groups: cx.props.log_groups.clone() }
             hr {}
-            // For LogGroupView, we use selected_log_group prop name
-            LogGroupView { selected_log_group: Some(selected_log_group_sample) }
+            // Use spread syntax for props
+            LogGroupView { ..props_for_selected_view }
             hr {}
-            LogGroupView { selected_log_group: None } // Example of no log group selected
+            LogGroupView { ..props_for_empty_view }
         }
     })
 }
