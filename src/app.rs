@@ -21,7 +21,7 @@ use tracing::{error, instrument}; // error also used in process_lines
 use crate::sources::aws;
 use crate::{
     args::Args,
-    sources::{docker::DockerReader, file::FileReader, LogReader, LogReader as _}, // LogReader for FileReader etc, SingleLayer from drain_flow used below
+    sources::{docker::DockerReader, file::FileReader, LogReader as _}, // LogReader for FileReader etc, SingleLayer from drain_flow used below
 };
 use drain_flow::drains::simple::SingleLayer; // Explicit import for clarity, though LogReader might bring it.
 
@@ -70,7 +70,7 @@ impl LyreTail {
     //
     #[instrument(level = "trace", skip_all)]
     pub(crate) async fn init_input(&self) {
-        let drain = self.get_drain_ref();
+        let _drain = self.get_drain_ref(); // Changed to _drain
 
         let follow = self.args.lock().follow;
         let (writer, reader) = mpsc::unbounded_channel::<String>();

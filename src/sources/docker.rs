@@ -224,12 +224,12 @@ impl LogReader for DockerReader {
     ) -> Result<(), anyhow::Error> {
         info!(container = %self.container_name, "Starting Docker log reading");
 
-        let options = LogsOptions {
+        let options = bollard::container::LogsOptions { // Added explicit path for clarity
             follow: self.follow,
             stdout: true,
             stderr: true,
-            since: self.since,
-            until: self.until,
+            since: self.since.unwrap_or_default(), // Changed
+            until: self.until.unwrap_or_default(), // Changed
             timestamps: self.timestamps,
             tail: self.tail.clone(), // Clone since LogsOptions takes String
             ..Default::default()

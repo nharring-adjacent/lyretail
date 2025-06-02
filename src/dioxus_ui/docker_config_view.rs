@@ -15,12 +15,27 @@ pub struct DockerConfigState { // Made public
 }
 
 // Define props for the component, including a callback for when config is submitted
-#[derive(Props, PartialEq)] // Changed from Props, Clone to Props, PartialEq
+#[derive(Props)] // Removed PartialEq from derive
 pub struct DockerConfigViewProps<'a> {
     // Callback to notify parent about the configuration
     // For now, let's assume it just takes the state.
     // Later, this might involve passing an Application/UI message or specific action.
-    on_submit: Option<EventHandler<'a, DockerConfigState>>,
+    pub on_submit: Option<EventHandler<'a, DockerConfigState>>, // Made field public for potential external construction if needed
+}
+
+impl<'a> PartialEq for DockerConfigViewProps<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        // EventHandlers are functions/closures, they don't have a meaningful direct equality.
+        // For props comparison, we often want to know if the *identity* of the handler changed,
+        // or if other data props changed. If the handler is the only prop,
+        // or if we always want to re-render if the parent re-renders (supplying a new closure instance),
+        // then returning true (if no other fields to compare) or comparing other fields is appropriate.
+        // Dioxus's EventHandler has an internal ID that can be used for PartialEq.
+        // So, we can compare them directly.
+        self.on_submit == other.on_submit
+        // If there were other fields:
+        // self.some_other_field == other.some_other_field && self.on_submit == other.on_submit
+    }
 }
 
 pub fn DockerConfigView<'a>(cx: Scope<'a, DockerConfigViewProps<'a>>) -> Element<'a> {

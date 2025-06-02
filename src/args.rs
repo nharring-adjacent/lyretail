@@ -10,6 +10,7 @@
 
 use std::path::PathBuf;
 
+#[cfg(feature = "aws")]
 use chrono::{DateTime, Duration, Utc};
 use clap::{CommandFactory, Parser};
 use tracing::instrument;
@@ -93,7 +94,7 @@ impl Args {
                         clap::ErrorKind::MissingRequiredArgument,
                         "Argument --docker-container-name is required when source_type is Docker.",
                     )
-                    .with_cmd(&Args::command()) // Add this to provide context
+                    // .with_cmd(&Args::command()) // Removed this line as with_cmd is private
                     .exit());
                 }
                 // Potentially validate docker_since/until formats if they are not parsed by clap directly
