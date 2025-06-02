@@ -15,7 +15,7 @@ pub struct DockerConfigState { // Made public
 }
 
 // Define props for the component, including a callback for when config is submitted
-#[derive(Props, Clone)]
+#[derive(Props, PartialEq)] // Changed from Props, Clone to Props, PartialEq
 pub struct DockerConfigViewProps<'a> {
     // Callback to notify parent about the configuration
     // For now, let's assume it just takes the state.

@@ -7,9 +7,18 @@ use parking_lot::RwLock; // Ensure this is in Cargo.toml if not already by anoth
 use crate::app::LogStats; // Assuming LogStats is pub from app.rs
 use tokio::time::Duration; // For interval
 
-#[derive(Props, Clone)]
+#[derive(Props, Clone)] // PartialEq will be implemented manually
 pub struct StatsViewProps {
     pub stats_ref: Arc<RwLock<LogStats>>,
+}
+
+impl PartialEq for StatsViewProps {
+    fn eq(&self, other: &Self) -> bool {
+        // Compare stats_ref by pointer equality
+        Arc::ptr_eq(&self.stats_ref, &other.stats_ref)
+        // If there were other fields, they would be compared here too, e.g.:
+        // && self.other_field == other.other_field
+    }
 }
 
 pub fn StatsView(cx: Scope<StatsViewProps>) -> Element {
