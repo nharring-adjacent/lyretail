@@ -10,7 +10,8 @@
 
 use std::path::PathBuf;
 
-use clap::Parser;
+use chrono::{DateTime, Duration, Utc};
+use clap::{CommandFactory, Parser};
 use tracing::instrument;
 
 use crate::sources::SourceType;
@@ -45,6 +46,23 @@ pub(crate) struct Args {
     #[cfg(feature = "aws")]
     #[clap(parse(try_from_str = parse_chrono), short, long)]
     pub window: Option<Duration>,
+
+    // Docker specific arguments
+    /// Name of the Docker container to fetch logs from.
+    #[clap(long)]
+    pub docker_container_name: Option<String>,
+    /// Fetch logs since this RFC3339 timestamp or relative duration (e.g., '10m', '1h').
+    #[clap(long)]
+    pub docker_since: Option<String>,
+    /// Fetch logs until this RFC3339 timestamp or relative duration (e.g., '10m', '1h').
+    #[clap(long)]
+    pub docker_until: Option<String>,
+    /// Show timestamps for Docker log entries.
+    #[clap(long)]
+    pub docker_timestamps: bool,
+    /// Number of lines to show from the end of the logs (e.g., "all", "100").
+    #[clap(long, default_value = "all")]
+    pub docker_tail: String,
 }
 
 impl Args {
@@ -52,13 +70,35 @@ impl Args {
     #[instrument(level = "trace")]
     pub fn validate(&self) -> Result<(), clap::ErrorKind> {
         match self.source_type {
-            SourceType::File => {},
+            SourceType::File => {
+                // Existing validation for File...
+                if self.file.is_none() {
+                    // Example: Or handle it in clap with `required_if_eq`
+                    // return Err(clap::ErrorKind::MissingRequiredArgument);
+                }
+            }
             #[cfg(feature = "aws")]
             SourceType::Cloudwatch => {
                 if self.window.is_some() && (self.since.is_some() || self.until.is_some()) {
-                    return Err(ErrorKind::ArgumentConflict);
+                    return Err(clap::ErrorKind::ArgumentConflict);
                 }
-            },
+                // Potentially add check for cloudwatch_log_group presence
+            }
+            SourceType::Docker => {
+                if self.docker_container_name.is_none() {
+                    // This assumes docker_container_name is Option<String>.
+                    // If it's String, clap's `required_if_eq` is better.
+                    // For now, let's stick to the plan of manual validation.
+                    return Err(clap::Error::raw(
+                        clap::ErrorKind::MissingRequiredArgument,
+                        "Argument --docker-container-name is required when source_type is Docker.",
+                    )
+                    .with_cmd(&Args::command()) // Add this to provide context
+                    .exit());
+                }
+                // Potentially validate docker_since/until formats if they are not parsed by clap directly
+                // For now, assume they are strings and will be parsed by the DockerReader.
+            }
         }
         Ok(())
     }

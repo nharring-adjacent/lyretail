@@ -12,6 +12,7 @@
 pub(crate) mod aws;
 
 pub(crate) mod file;
+pub(crate) mod docker;
 
 use async_trait::async_trait;
 use clap::ArgEnum;
@@ -23,6 +24,7 @@ pub(crate) enum SourceType {
     File,
     #[cfg(feature = "aws")]
     Cloudwatch,
+    Docker,
 }
 
 #[async_trait]
