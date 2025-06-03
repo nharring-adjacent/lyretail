@@ -1,6 +1,6 @@
 // src/sources/docker.rs
 use async_trait::async_trait;
-use bollard::container::{LogsOptions, LogOutput};
+use bollard::container::LogOutput; // LogsOptions removed
 use bollard::Docker;
 use tokio::sync::mpsc;
 use tokio_stream::StreamExt;

@@ -12,7 +12,7 @@ use std::path::PathBuf;
 
 #[cfg(feature = "aws")]
 use chrono::{DateTime, Duration, Utc};
-use clap::{CommandFactory, Parser};
+use clap::Parser; // CommandFactory removed
 use tracing::instrument;
 
 use crate::sources::SourceType;

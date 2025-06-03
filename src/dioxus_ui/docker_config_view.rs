@@ -24,17 +24,19 @@ pub struct DockerConfigViewProps<'a> {
 }
 
 impl<'a> PartialEq for DockerConfigViewProps<'a> {
-    fn eq(&self, other: &Self) -> bool {
-        // EventHandlers are functions/closures, they don't have a meaningful direct equality.
-        // For props comparison, we often want to know if the *identity* of the handler changed,
-        // or if other data props changed. If the handler is the only prop,
-        // or if we always want to re-render if the parent re-renders (supplying a new closure instance),
-        // then returning true (if no other fields to compare) or comparing other fields is appropriate.
-        // Dioxus's EventHandler has an internal ID that can be used for PartialEq.
-        // So, we can compare them directly.
-        self.on_submit == other.on_submit
-        // If there were other fields:
-        // self.some_other_field == other.some_other_field && self.on_submit == other.on_submit
+    fn eq(&self, _other: &Self) -> bool {
+        // EventHandlers are typically closures. Comparing them for equality is non-trivial
+        // and often not what's desired for Dioxus's re-render logic.
+        // If the parent passes a new closure instance, Dioxus might see it as a new prop.
+        // By returning `true` here (assuming `on_submit` is the only field, or other fields
+        // are compared separately if they exist), we state that changes to `on_submit` alone
+        // (i.e. a different closure instance but functionally identical) should not cause a re-render
+        // *based on this PartialEq implementation*. Dioxus may still re-render for other reasons.
+        // If there were other data fields in Props, they should be compared here:
+        // e.g., self.some_data == other.some_data
+        // Since `on_submit` is the only field, and we're effectively ignoring it for PartialEq,
+        // all instances of `DockerConfigViewProps` are considered equal by this implementation.
+        true
     }
 }
 
