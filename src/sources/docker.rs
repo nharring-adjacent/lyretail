@@ -67,6 +67,70 @@ impl DockerReader {
     }
 }
 
+#[async_trait]
+impl LogReader for DockerReader {
+    #[instrument(level = "trace", skip(self, drain_writer))]
+    async fn read_logs(
+        &self,
+        drain_writer: mpsc::UnboundedSender<String>,
+    ) -> Result<(), anyhow::Error> {
+        info!(container = %self.container_name, "Starting Docker log reading");
+
+        let options = bollard::container::LogsOptions {
+            // Added explicit path for clarity
+            follow: self.follow,
+            stdout: true,
+            stderr: true,
+            since: self.since.unwrap_or_default(), // Changed
+            until: self.until.unwrap_or_default(), // Changed
+            timestamps: self.timestamps,
+            tail: self.tail.clone(), // Clone since LogsOptions takes String
+            ..Default::default()
+        };
+
+        let mut stream = self.docker.logs(&self.container_name, Some(options));
+
+        while let Some(log_result) = stream.next().await {
+            match log_result {
+                Ok(log_output) => {
+                    // LogOutput can be Stdout, Stderr, Stdin, Console, etc.
+                    // We are interested in Stdout and Stderr.
+                    // The `LogOutput` enum has a `to_string()` method that prefixes.
+                    // Or, we can match on the variant.
+                    match log_output {
+                        LogOutput::StdOut { message } => {
+                            drain_writer.send(String::from_utf8_lossy(&message).into_owned())?;
+                        }
+                        LogOutput::StdErr { message } => {
+                            drain_writer.send(String::from_utf8_lossy(&message).into_owned())?;
+                        }
+                        LogOutput::Console { message } => {
+                            // Handle console messages too
+                            drain_writer.send(String::from_utf8_lossy(&message).into_owned())?;
+                        }
+                        _ => {
+                            // Other variants like System, Stdin not typically expected for logs
+                            warn!("Received unexpected Docker log type: {:?}", log_output);
+                        }
+                    }
+                }
+                Err(e) => {
+                    // Handle recoverable I/O errors vs. non-recoverable ones.
+                    // Bollard's errors might wrap hyper errors, which can indicate I/O issues.
+                    // For now, a simple error log and propagate.
+                    // A more robust solution would inspect `e` to decide if retrying is feasible.
+                    error!(container = %self.container_name, "Error reading Docker logs: {}", e);
+                    // Depending on the error, we might want to break or continue (if follow is true and it's a temporary issue)
+                    // For now, any error will terminate the log reading for this source.
+                    return Err(anyhow::Error::new(e));
+                }
+            }
+        }
+        info!(container = %self.container_name, "Finished Docker log reading (stream ended)");
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*; // DockerReader, LogReader
@@ -217,68 +281,4 @@ mod tests {
         // assert!(rx.recv().await.is_none(), "Channel should be empty and closed after error");
     }
     */
-}
-
-#[async_trait]
-impl LogReader for DockerReader {
-    #[instrument(level = "trace", skip(self, drain_writer))]
-    async fn read_logs(
-        &self,
-        drain_writer: mpsc::UnboundedSender<String>,
-    ) -> Result<(), anyhow::Error> {
-        info!(container = %self.container_name, "Starting Docker log reading");
-
-        let options = bollard::container::LogsOptions {
-            // Added explicit path for clarity
-            follow: self.follow,
-            stdout: true,
-            stderr: true,
-            since: self.since.unwrap_or_default(), // Changed
-            until: self.until.unwrap_or_default(), // Changed
-            timestamps: self.timestamps,
-            tail: self.tail.clone(), // Clone since LogsOptions takes String
-            ..Default::default()
-        };
-
-        let mut stream = self.docker.logs(&self.container_name, Some(options));
-
-        while let Some(log_result) = stream.next().await {
-            match log_result {
-                Ok(log_output) => {
-                    // LogOutput can be Stdout, Stderr, Stdin, Console, etc.
-                    // We are interested in Stdout and Stderr.
-                    // The `LogOutput` enum has a `to_string()` method that prefixes.
-                    // Or, we can match on the variant.
-                    match log_output {
-                        LogOutput::StdOut { message } => {
-                            drain_writer.send(String::from_utf8_lossy(&message).into_owned())?;
-                        }
-                        LogOutput::StdErr { message } => {
-                            drain_writer.send(String::from_utf8_lossy(&message).into_owned())?;
-                        }
-                        LogOutput::Console { message } => {
-                            // Handle console messages too
-                            drain_writer.send(String::from_utf8_lossy(&message).into_owned())?;
-                        }
-                        _ => {
-                            // Other variants like System, Stdin not typically expected for logs
-                            warn!("Received unexpected Docker log type: {:?}", log_output);
-                        }
-                    }
-                }
-                Err(e) => {
-                    // Handle recoverable I/O errors vs. non-recoverable ones.
-                    // Bollard's errors might wrap hyper errors, which can indicate I/O issues.
-                    // For now, a simple error log and propagate.
-                    // A more robust solution would inspect `e` to decide if retrying is feasible.
-                    error!(container = %self.container_name, "Error reading Docker logs: {}", e);
-                    // Depending on the error, we might want to break or continue (if follow is true and it's a temporary issue)
-                    // For now, any error will terminate the log reading for this source.
-                    return Err(anyhow::Error::new(e));
-                }
-            }
-        }
-        info!(container = %self.container_name, "Finished Docker log reading (stream ended)");
-        Ok(())
-    }
 }

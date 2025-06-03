@@ -114,7 +114,7 @@ impl<'a> Ui {
                 }
             };
         }
-        let _rs = debug!("restoring terminal");
+        debug!("restoring terminal");
         disable_raw_mode()?;
         execute!(self.terminal.backend_mut(), LeaveAlternateScreen)?;
         self.terminal.show_cursor()?;
