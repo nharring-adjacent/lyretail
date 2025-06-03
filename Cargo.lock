@@ -29,6 +29,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "ahash"
+version = "0.8.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5a15f179cd60c4584b8a8c596927aadc462e27f2ca70c04e0071964a73ba7a75"
+dependencies = [
+ "cfg-if",
+ "once_cell",
+ "version_check",
+ "zerocopy",
+]
+
+[[package]]
 name = "aho-corasick"
 version = "1.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -81,6 +93,12 @@ name = "arrayvec"
 version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7c02d123df017efcdfbd739ef81735b36c5ba83ec3c59c80a9d7ecc718f92e50"
+
+[[package]]
+name = "askama_escape"
+version = "0.10.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "619743e34b5ba4e9703bba34deac3427c72507c7159f5fd030aea8cac0cfe341"
 
 [[package]]
 name = "async-channel"
@@ -654,6 +672,45 @@ dependencies = [
 ]
 
 [[package]]
+name = "bollard"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "af254ed2da4936ef73309e9597180558821cb16ae9bba4cb24ce6b612d8d80ed"
+dependencies = [
+ "base64 0.21.7",
+ "bollard-stubs",
+ "bytes",
+ "futures-core",
+ "futures-util",
+ "hex",
+ "http",
+ "hyper",
+ "hyperlocal",
+ "log",
+ "pin-project-lite",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "serde_repr",
+ "serde_urlencoded",
+ "thiserror",
+ "tokio",
+ "tokio-util 0.7.15",
+ "url",
+ "winapi",
+]
+
+[[package]]
+name = "bollard-stubs"
+version = "1.42.0-rc.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "602bda35f33aeb571cef387dcd4042c643a8bf689d8aaac2cc47ea24cb7bc7e0"
+dependencies = [
+ "serde",
+ "serde_with",
+]
+
+[[package]]
 name = "bumpalo"
 version = "3.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -776,6 +833,7 @@ dependencies = [
  "iana-time-zone",
  "js-sys",
  "num-traits",
+ "serde",
  "wasm-bindgen",
  "windows-link",
 ]
@@ -1147,6 +1205,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9c9e6a11ca8224451684bc0d7d5a7adbf8f2fd6887261a1cfc3c0432f9d4068e"
 dependencies = [
  "powerfmt",
+ "serde",
 ]
 
 [[package]]
@@ -1326,6 +1385,22 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.101",
+]
+
+[[package]]
+name = "dioxus-ssr"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d32c006feb2cd0d9aafc6263167d52f81fd8004fd6545c90582504314766f775"
+dependencies = [
+ "askama_escape",
+ "dioxus-core",
+ "http",
+ "lru 0.10.1",
+ "rustc-hash",
+ "thiserror",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -2072,7 +2147,7 @@ version = "0.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ab5ef0d4909ef3724cc8cce6ccc8572c5c817592e9285f5464f8e86f8bd3726e"
 dependencies = [
- "ahash",
+ "ahash 0.7.8",
 ]
 
 [[package]]
@@ -2080,6 +2155,15 @@ name = "hashbrown"
 version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a9ee70c43aaf417c914396645a0fa852624801b24ebb7ae78fe8272889ac888"
+
+[[package]]
+name = "hashbrown"
+version = "0.13.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "43a3c133739dddd0d2990f9a4bdf8eb4b21ef50e4851ca85ab661199821d510e"
+dependencies = [
+ "ahash 0.8.12",
+]
 
 [[package]]
 name = "hashbrown"
@@ -2255,6 +2339,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "hyperlocal"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0fafdf7b2b2de7c9784f76e02c0935e65a8117ec3b768644379983ab333ac98c"
+dependencies = [
+ "futures-util",
+ "hex",
+ "hyper",
+ "pin-project",
+ "tokio",
+]
+
+[[package]]
 name = "iana-time-zone"
 version = "0.1.63"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2411,6 +2508,7 @@ checksum = "bd070e393353796e801d209ad339e89596eb4c8d430d18ede6a1cced8fafbd99"
 dependencies = [
  "autocfg",
  "hashbrown 0.12.3",
+ "serde",
 ]
 
 [[package]]
@@ -2670,6 +2768,15 @@ checksum = "b3bd0dd2cd90571056fdb71f6275fada10131182f84899f4b2a916e565d81d86"
 
 [[package]]
 name = "lru"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "718e8fae447df0c7e1ba7f5189829e63fd536945c8988d61444c19039f16b670"
+dependencies = [
+ "hashbrown 0.13.2",
+]
+
+[[package]]
+name = "lru"
 version = "0.12.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "234cf4f4a04dc1f57e24b96cc0cd600cf2af460d4161ac5ecdd0af8e1f3b2a38"
@@ -2687,6 +2794,7 @@ dependencies = [
  "aws-sdk-cloudwatchlogs",
  "aws-sdk-s3",
  "aws-types",
+ "bollard",
  "chrono",
  "clap",
  "console-subscriber",
@@ -2695,6 +2803,7 @@ dependencies = [
  "dateparser",
  "dioxus",
  "dioxus-desktop",
+ "dioxus-ssr",
  "dioxus-web",
  "drain-flow",
  "duration-str",
@@ -2706,6 +2815,7 @@ dependencies = [
  "joinery 2.1.0",
  "macro-attr",
  "parking_lot",
+ "rfd",
  "tokio",
  "tokio-stream",
  "tokio-util 0.7.15",
@@ -4007,6 +4117,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde_urlencoded"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d3491c14715ca2294c4d6a88f15e84739788c1d030eed8c110436aafdaa2f3fd"
+dependencies = [
+ "form_urlencoded",
+ "itoa 1.0.15",
+ "ryu",
+ "serde",
+]
+
+[[package]]
+name = "serde_with"
+version = "2.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "07ff71d2c147a7b57362cead5e22f772cd52f6ab31cfcd9edcd7f6aeb2a0afbe"
+dependencies = [
+ "base64 0.13.1",
+ "chrono",
+ "hex",
+ "indexmap 1.9.3",
+ "serde",
+ "serde_json",
+ "time",
+]
+
+[[package]]
 name = "servo_arc"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4115,7 +4252,7 @@ version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f20798defa0e9d4eff9ca451c7f84774c7378a9c3b5a40112cfa2b3eadb97ae2"
 dependencies = [
- "lru",
+ "lru 0.12.5",
  "once_cell",
  "rustc-hash",
 ]
@@ -4491,6 +4628,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a7619e19bc266e0f9c5e6686659d394bc57973859340060a69221e57dbc0c40"
 dependencies = [
  "deranged",
+ "itoa 1.0.15",
  "num-conv",
  "powerfmt",
  "serde",
