@@ -110,7 +110,7 @@ mod tests {
                  return; // Or proceed and let it panic to highlight the dependency.
             }
         }
-        
+
         let reader = reader_result.unwrap();
 
         assert_eq!(reader.container_name, container_name);
@@ -141,7 +141,7 @@ mod tests {
             None, // Default Docker connection attempt
         )
         .await;
-        
+
         if reader_result.is_err() {
             if std::env::var("CI").is_ok() {
                  println!("Skipping DockerReader field assertions as Docker connection likely failed in CI for optional params test.");
