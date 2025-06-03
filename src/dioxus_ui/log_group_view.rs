@@ -1,5 +1,5 @@
 #![allow(non_snake_case)] // Common for Dioxus components
-#![allow(dead_code)]     // As per plan
+#![allow(dead_code)] // As per plan
 
 use dioxus::prelude::*;
 
@@ -48,10 +48,10 @@ fn _example_usage(cx: Scope) -> Element {
 
     // Explicitly create LogGroupViewProps for the example
     let props_for_selected_example = LogGroupViewProps {
-        selected_log_group: Some(sample_detail.clone()) // Clone sample data
+        selected_log_group: Some(sample_detail.clone()), // Clone sample data
     };
     let props_for_empty_example = LogGroupViewProps {
-        selected_log_group: None
+        selected_log_group: None,
     };
 
     cx.render(rsx! {

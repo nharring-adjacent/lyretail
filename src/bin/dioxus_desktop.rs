@@ -1,14 +1,14 @@
 use dioxus_desktop::Config;
+use parking_lot::RwLock;
 use rfd::FileDialog;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
-use std::sync::Arc; // Added for stats_ref
-use parking_lot::RwLock; // Added for stats_ref
+use std::sync::Arc; // Added for stats_ref // Added for stats_ref
 
+use lyretail::app::LogStats;
 use lyretail::dioxus_ui::app::{App, AppProps};
-use lyretail::dioxus_ui::base_table::LogGroupSummaryProps;
-use lyretail::app::LogStats; // Added for stats_ref
+use lyretail::dioxus_ui::base_table::LogGroupSummaryProps; // Added for stats_ref
 
 fn open_file_dialog() -> Option<PathBuf> {
     FileDialog::new()
@@ -54,6 +54,8 @@ fn main() {
             log_groups: log_groups_data,
             stats_ref: Arc::new(RwLock::new(LogStats::default())), // Provide default stats_ref
         },
-        Config::new().with_window(dioxus_desktop::WindowBuilder::new().with_title("LyreTail Log Analyzer Desktop")) // Corrected typo
+        Config::new().with_window(
+            dioxus_desktop::WindowBuilder::new().with_title("LyreTail Log Analyzer Desktop"),
+        ), // Corrected typo
     );
 }

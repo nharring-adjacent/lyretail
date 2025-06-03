@@ -62,7 +62,8 @@ impl LyreTail {
         self.drain.clone()
     }
 
-    pub(crate) fn get_stats_ref(&self) -> Arc<RwLock<LogStats>> { // Added getter
+    pub(crate) fn get_stats_ref(&self) -> Arc<RwLock<LogStats>> {
+        // Added getter
         self.log_stats.clone()
     }
 
@@ -82,7 +83,7 @@ impl LyreTail {
                     let reader = FileReader::new(&file, follow);
                     reader.read_logs(writer).await.unwrap();
                 });
-            },
+            }
             #[cfg(feature = "aws")]
             crate::sources::SourceType::Cloudwatch => {
                 let args = self.args.lock();
@@ -146,7 +147,9 @@ impl LyreTail {
         let drain_for_processing = self.get_drain_ref();
         let stats_clone_for_processing = self.log_stats.clone();
         task::spawn(async move {
-            if let Err(e) = process_lines(drain_for_processing, reader, stats_clone_for_processing).await {
+            if let Err(e) =
+                process_lines(drain_for_processing, reader, stats_clone_for_processing).await
+            {
                 error!("Error in process_lines: {}", e);
             }
         });
@@ -199,9 +202,10 @@ async fn process_lines(
             let mut stats_guard = log_stats.write();
             let elapsed = last_update_time.elapsed();
             if elapsed.as_secs_f64() > 0.0 {
-                stats_guard.lines_per_second = lines_since_last_update as f64 / elapsed.as_secs_f64();
+                stats_guard.lines_per_second =
+                    lines_since_last_update as f64 / elapsed.as_secs_f64();
             } else if lines_since_last_update > 0 {
-                 stats_guard.lines_per_second = f64::INFINITY;
+                stats_guard.lines_per_second = f64::INFINITY;
             } else {
                 stats_guard.lines_per_second = 0.0;
             }

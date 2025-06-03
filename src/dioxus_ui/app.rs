@@ -1,18 +1,18 @@
 #![allow(non_snake_case)] // Common for Dioxus components
-#![allow(dead_code)]     // As per plan
+#![allow(dead_code)] // As per plan
 
-use dioxus::prelude::*;
 use crate::dioxus_ui::base_table::{BaseTable, LogGroupSummaryProps};
+use dioxus::prelude::*;
 // Import LogGroupViewProps alongside LogGroupView and LogGroupDetailProps
-use crate::dioxus_ui::log_group_view::{LogGroupView, LogGroupDetailProps, LogGroupViewProps};
+use crate::dioxus_ui::log_group_view::{LogGroupDetailProps, LogGroupView, LogGroupViewProps};
 
 // Import DockerConfigView and its props
-use crate::dioxus_ui::docker_config_view::{DockerConfigView, DockerConfigState};
+use crate::dioxus_ui::docker_config_view::{DockerConfigState, DockerConfigView};
 // Import StatsView and its props
-use crate::dioxus_ui::stats_view::StatsView; // StatsViewProps not directly used in App's render call signature, but good for context
 use crate::app::LogStats; // For AppProps
-use std::sync::Arc; // For AppProps
+use crate::dioxus_ui::stats_view::StatsView; // StatsViewProps not directly used in App's render call signature, but good for context
 use parking_lot::RwLock; // For AppProps
+use std::sync::Arc; // For AppProps
 use tracing::info; // For logging
 
 // Define UI states
@@ -50,10 +50,10 @@ pub fn App(cx: Scope<AppProps>) -> Element {
         occurrences: 10,
     };
     let props_for_selected_view = LogGroupViewProps {
-        selected_log_group: Some(selected_log_group_sample.clone())
+        selected_log_group: Some(selected_log_group_sample.clone()),
     };
     let props_for_empty_view = LogGroupViewProps {
-        selected_log_group: None
+        selected_log_group: None,
     };
 
     // Callback for DockerConfigView submission

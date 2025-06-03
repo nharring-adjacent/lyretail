@@ -13,7 +13,7 @@ use aws_sdk_cloudwatchlogs::{model::OrderBy, Client};
 use chrono::{DateTime, Duration, Utc};
 use tokio::sync::mpsc;
 use tokio_stream::StreamExt;
-use tracing::{instrument, debug, debug_span};
+use tracing::{debug, debug_span, instrument};
 
 use crate::sources::LogReader;
 #[derive(Debug, Clone)]
@@ -42,7 +42,7 @@ impl CloudwatchReader {
                     .expect("valid duration should not wrap");
                 let end = Utc::now();
                 (start, end)
-            },
+            }
             None => {
                 let start = if let None = since {
                     // default to 1 hour ago
@@ -59,7 +59,7 @@ impl CloudwatchReader {
                     until.unwrap().to_owned()
                 };
                 (start, end)
-            },
+            }
         };
         CloudwatchReader {
             client: aws_sdk_cloudwatchlogs::Client::new(&client_config),

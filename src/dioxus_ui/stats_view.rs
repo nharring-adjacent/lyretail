@@ -1,10 +1,10 @@
 // src/dioxus_ui/stats_view.rs
 #![allow(non_snake_case)]
 
-use dioxus::prelude::*;
-use std::sync::Arc;
-use parking_lot::RwLock; // Ensure this is in Cargo.toml if not already by another dep
 use crate::app::LogStats; // Assuming LogStats is pub from app.rs
+use dioxus::prelude::*;
+use parking_lot::RwLock; // Ensure this is in Cargo.toml if not already by another dep
+use std::sync::Arc;
 use tokio::time::Duration; // For interval
 
 #[derive(Props, Clone)] // PartialEq will be implemented manually
@@ -42,7 +42,10 @@ pub fn StatsView(cx: Scope<StatsViewProps>) -> Element {
     // Read stats. Need to handle potential poisoning of RwLock, though less common.
     let (lines_processed, lps) = {
         let stats_guard = cx.props.stats_ref.read();
-        (stats_guard.total_lines_processed, stats_guard.lines_per_second)
+        (
+            stats_guard.total_lines_processed,
+            stats_guard.lines_per_second,
+        )
     };
 
     cx.render(rsx! {

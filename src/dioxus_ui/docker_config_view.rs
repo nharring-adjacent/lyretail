@@ -5,7 +5,8 @@ use dioxus::prelude::*;
 
 // Define a struct to hold the Docker configuration state
 #[derive(Clone, Default, PartialEq, Debug)] // Added Debug
-pub struct DockerConfigState { // Made public
+pub struct DockerConfigState {
+    // Made public
     container_name: String,
     since: String,
     until: String,
@@ -46,8 +47,8 @@ impl<'a> Clone for DockerConfigViewProps<'a> {
             on_submit: None, // EventHandler is not Clone, so set to None.
                              // This is acceptable for test scenarios where the handler's
                              // invocation might not be the focus, or where None is valid.
-            // If there were other cloneable fields, they would be cloned here:
-            // some_other_field: self.some_other_field.clone(),
+                             // If there were other cloneable fields, they would be cloned here:
+                             // some_other_field: self.some_other_field.clone(),
         }
     }
 }
@@ -203,8 +204,8 @@ pub fn DockerConfigView<'a>(cx: Scope<'a, DockerConfigViewProps<'a>>) -> Element
 mod tests {
     use super::*;
     use dioxus::core::VirtualDom; // NoOpMutations import removed
-    // std::sync::Arc and Mutex are not strictly needed for the basic render test,
-    // but might be if we were testing callbacks.
+                                  // std::sync::Arc and Mutex are not strictly needed for the basic render test,
+                                  // but might be if we were testing callbacks.
 
     // Test temporarily disabled due to unresolved lifetime issues with
     // `VirtualDom::new_with_props` and props (`DockerConfigViewProps<'a>`)
@@ -222,7 +223,7 @@ mod tests {
         // Pass the DockerConfigView function item and the 'static props.
         let mut dom = VirtualDom::new_with_props(
             DockerConfigView, // The component function
-            props             // The 'static props
+            props,            // The 'static props
         );
 
         // Rebuild the DOM

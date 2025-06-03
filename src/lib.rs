@@ -9,4 +9,4 @@ pub mod dioxus_ui;
 pub mod app; // Made public for LogStats and LyreTail access from UI/bin
 pub mod args; // Args struct might be needed by app or other modules
 pub mod sources; // Log sources logic
-// pub mod ui; // Assuming TUI is separate or main binary only for now
+                 // pub mod ui; // Assuming TUI is separate or main binary only for now

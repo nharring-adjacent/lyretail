@@ -1,5 +1,5 @@
 #![allow(non_snake_case)] // Common for Dioxus components
-#![allow(dead_code)]     // As per plan
+#![allow(dead_code)] // As per plan
 
 use dioxus::prelude::*;
 

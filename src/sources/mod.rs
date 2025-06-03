@@ -11,8 +11,8 @@
 #[cfg(feature = "aws")]
 pub(crate) mod aws;
 
-pub(crate) mod file;
 pub(crate) mod docker;
+pub(crate) mod file;
 
 use async_trait::async_trait;
 use clap::ArgEnum;

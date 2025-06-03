@@ -49,11 +49,11 @@ async fn main() {
     let args_inner = Args::parse();
     debug!("got args");
     match args_inner.validate() {
-        Ok(_) => {},
+        Ok(_) => {}
         Err(e) => {
             let mut cmd = Args::command();
             cmd.error(e, "Incompatible arguments provided").exit();
-        },
+        }
     };
     debug!("validated args");
     let args = Arc::new(Mutex::new(args_inner));

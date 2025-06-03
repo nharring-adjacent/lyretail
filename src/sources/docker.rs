@@ -2,10 +2,10 @@
 use async_trait::async_trait;
 use bollard::container::LogOutput; // LogsOptions removed
 use bollard::Docker;
+use std::default::Default;
 use tokio::sync::mpsc;
 use tokio_stream::StreamExt;
-use tracing::{instrument, error, info, warn}; // Added info and warn
-use std::default::Default; // To use Default::default() for LogsOptions
+use tracing::{error, info, instrument, warn}; // Added info and warn // To use Default::default() for LogsOptions
 
 use crate::sources::LogReader;
 
@@ -55,7 +55,6 @@ impl DockerReader {
         let since = since_str.and_then(|s| s.parse::<i64>().ok());
         let until = until_str.and_then(|s| s.parse::<i64>().ok());
 
-
         Ok(Self {
             container_name,
             since,
@@ -71,8 +70,8 @@ impl DockerReader {
 #[cfg(test)]
 mod tests {
     use super::*; // DockerReader, LogReader
-    // use bollard::Docker; // Not strictly needed for the tests as new() can take None, or will attempt default connection
-    // use tokio::sync::mpsc; // Not needed for these specific tests focusing on `new()`
+                  // use bollard::Docker; // Not strictly needed for the tests as new() can take None, or will attempt default connection
+                  // use tokio::sync::mpsc; // Not needed for these specific tests focusing on `new()`
 
     #[tokio::test]
     async fn test_docker_reader_new_basic_params() {
@@ -100,14 +99,15 @@ mod tests {
             // We can't assert the internal fields if `new` fails.
             // For a true unit test, we'd mock the Docker client or inject a dummy one.
             // For now, we acknowledge this might happen.
-            if std::env::var("CI").is_ok() { // Skip detailed checks on CI if Docker might not be there
-                 println!("Skipping DockerReader field assertions as Docker connection likely failed in CI.");
-                 return;
+            if std::env::var("CI").is_ok() {
+                // Skip detailed checks on CI if Docker might not be there
+                println!("Skipping DockerReader field assertions as Docker connection likely failed in CI.");
+                return;
             } else {
                 // For local tests, user should ensure Docker is running or accept this might fail.
-                 println!("Warning: DockerReader::new failed, possibly due to Docker not running. Field assertions will be skipped.");
-                 assert!(reader_result.is_ok(), "DockerReader::new should ideally succeed for this test (Docker might not be running). Details: {:?}", reader_result.err());
-                 return; // Or proceed and let it panic to highlight the dependency.
+                println!("Warning: DockerReader::new failed, possibly due to Docker not running. Field assertions will be skipped.");
+                assert!(reader_result.is_ok(), "DockerReader::new should ideally succeed for this test (Docker might not be running). Details: {:?}", reader_result.err());
+                return; // Or proceed and let it panic to highlight the dependency.
             }
         }
 
@@ -144,12 +144,16 @@ mod tests {
 
         if reader_result.is_err() {
             if std::env::var("CI").is_ok() {
-                 println!("Skipping DockerReader field assertions as Docker connection likely failed in CI for optional params test.");
-                 return;
+                println!("Skipping DockerReader field assertions as Docker connection likely failed in CI for optional params test.");
+                return;
             } else {
-                 println!("Warning: DockerReader::new failed in optional_params test (Docker might not be running). Field assertions will be skipped.");
-                 assert!(reader_result.is_ok(), "DockerReader::new (optional_params) should ideally succeed. Details: {:?}", reader_result.err());
-                 return;
+                println!("Warning: DockerReader::new failed in optional_params test (Docker might not be running). Field assertions will be skipped.");
+                assert!(
+                    reader_result.is_ok(),
+                    "DockerReader::new (optional_params) should ideally succeed. Details: {:?}",
+                    reader_result.err()
+                );
+                return;
             }
         }
 
@@ -224,7 +228,8 @@ impl LogReader for DockerReader {
     ) -> Result<(), anyhow::Error> {
         info!(container = %self.container_name, "Starting Docker log reading");
 
-        let options = bollard::container::LogsOptions { // Added explicit path for clarity
+        let options = bollard::container::LogsOptions {
+            // Added explicit path for clarity
             follow: self.follow,
             stdout: true,
             stderr: true,
@@ -251,10 +256,12 @@ impl LogReader for DockerReader {
                         LogOutput::StdErr { message } => {
                             drain_writer.send(String::from_utf8_lossy(&message).into_owned())?;
                         }
-                        LogOutput::Console { message } => { // Handle console messages too
+                        LogOutput::Console { message } => {
+                            // Handle console messages too
                             drain_writer.send(String::from_utf8_lossy(&message).into_owned())?;
                         }
-                        _ => { // Other variants like System, Stdin not typically expected for logs
+                        _ => {
+                            // Other variants like System, Stdin not typically expected for logs
                             warn!("Received unexpected Docker log type: {:?}", log_output);
                         }
                     }

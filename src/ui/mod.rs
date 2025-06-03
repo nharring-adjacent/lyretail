@@ -27,8 +27,7 @@ use drain_flow::log_group::LogGroup;
 use tracing::{debug, instrument, warn};
 use tui::{
     backend::{Backend, CrosstermBackend},
-    Frame,
-    Terminal,
+    Frame, Terminal,
 };
 
 use self::{base::BaseTable, log_group::LogGroupTab};
@@ -97,7 +96,7 @@ impl<'a> Ui {
                     } else {
                         UiState::Base
                     }
-                },
+                }
                 UiState::LogGroup(log_group) => {
                     self.log_group = Some(log_group.clone());
                     let lg_view = LogGroupTab::new(log_group.clone());
@@ -108,11 +107,11 @@ impl<'a> Ui {
                     } else {
                         UiState::LogGroup(log_group.clone())
                     }
-                },
+                }
                 UiState::Exiting => {
                     self.stopping.store(true, Ordering::SeqCst);
                     UiState::Exiting
-                },
+                }
             };
         }
         let _rs = debug!("restoring terminal");
