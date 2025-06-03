@@ -202,28 +202,27 @@ pub fn DockerConfigView<'a>(cx: Scope<'a, DockerConfigViewProps<'a>>) -> Element
 #[cfg(test)]
 mod tests {
     use super::*;
-    use dioxus::core::{VirtualDom, NoOpMutations}; // Added NoOpMutations
+    use dioxus::core::VirtualDom; // NoOpMutations import removed
     // std::sync::Arc and Mutex are not strictly needed for the basic render test,
     // but might be if we were testing callbacks.
 
     #[test]
     fn test_docker_config_view_renders_basic() {
-        // Create props for the component.
-        let props = DockerConfigViewProps { on_submit: None };
+        // Explicitly type props as DockerConfigViewProps<'static>
+        // This is possible because on_submit: None means the 'a lifetime from EventHandler
+        // can be 'static. DockerConfigState is 'static.
+        let props: DockerConfigViewProps<'static> = DockerConfigViewProps { on_submit: None };
 
-        // Create a new VirtualDom. The closure captures `props`.
-        let mut dom = VirtualDom::new(move |cx| {
-            // The props instance created above can be cloned into the closure.
-            // The component function signature is fn DockerConfigView<'a>(cx: Scope<'a, DockerConfigViewProps<'a>>) -> Element<'a>
-            // so we need to call it as DockerConfigView(cx, props_instance)
-            DockerConfigView(cx, props.clone())
-        });
+        // Pass the DockerConfigView function item and the 'static props.
+        let mut dom = VirtualDom::new_with_props(
+            DockerConfigView, // The component function
+            props             // The 'static props
+        );
 
-        // Build the DOM initially.
-        // Use `rebuild` with `NoOpMutations` for testing environments without a real renderer.
-        dom.rebuild(&mut NoOpMutations);
+        // Rebuild the DOM
+        let _mutations = dom.rebuild();
 
-        // Render to string using dioxus-ssr to check for panics and basic output.
+        // Render to string
         let output = dioxus_ssr::render(&dom);
         assert!(!output.is_empty(), "Rendered output should not be empty");
     }
