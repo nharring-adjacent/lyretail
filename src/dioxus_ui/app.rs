@@ -23,7 +23,7 @@ pub enum CurrentView {
     Dashboard, // Default view showing logs or summaries
     ConfigureDocker,
     SelectDockerContainer, // Added new variant
-    // Potentially other views like ConfigureFile, ConfigureCloudwatch etc.
+                           // Potentially other views like ConfigureFile, ConfigureCloudwatch etc.
 }
 
 #[derive(Props, Clone)] // Removed PartialEq here, will implement manually

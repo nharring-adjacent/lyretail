@@ -68,7 +68,8 @@ impl<'a> BaseTable {
             .collect_log_groups() // Changed to collect_log_groups
             .into_iter() // Added into_iter assuming collect_log_groups returns a Vec
             .sorted_by(|a, b| Ord::cmp(&b.len(), &a.len()))
-            .map(|lg| { // lg is now LogGroup or &LogGroup depending on what collect_log_groups returns
+            .map(|lg| {
+                // lg is now LogGroup or &LogGroup depending on what collect_log_groups returns
                 let cells = vec![
                     Cell::from(lg.event().uid.to_string()), // Changed .serialize() to .to_string()
                     Cell::from(lg.event().to_string()),

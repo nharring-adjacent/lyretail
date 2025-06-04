@@ -194,10 +194,10 @@ pub fn DockerConfigView<'a>(cx: Scope<'a, DockerConfigViewProps<'a>>) -> Element
 
 #[cfg(test)]
 mod tests {
-    
-     // NoOpMutations import removed
-                                  // std::sync::Arc and Mutex are not strictly needed for the basic render test,
-                                  // but might be if we were testing callbacks.
+
+    // NoOpMutations import removed
+    // std::sync::Arc and Mutex are not strictly needed for the basic render test,
+    // but might be if we were testing callbacks.
 
     // Test temporarily disabled due to unresolved lifetime issues with
     // `VirtualDom::new_with_props` and props (`DockerConfigViewProps<'a>`)
@@ -207,24 +207,24 @@ mod tests {
     // Needs further investigation or an alternative testing strategy (e.g., integration test).
     // #[test]
     //fn test_docker_config_view_renders_basic() {
-        // Explicitly type props as DockerConfigViewProps<'static>
-        // This is possible because on_submit: None means the 'a lifetime from EventHandler
-        // can be 'static. DockerConfigState is 'static.
+    // Explicitly type props as DockerConfigViewProps<'static>
+    // This is possible because on_submit: None means the 'a lifetime from EventHandler
+    // can be 'static. DockerConfigState is 'static.
     //    let props: DockerConfigViewProps<'static> = DockerConfigViewProps { on_submit: None };
 
-        // Pass the DockerConfigView function item and the 'static props.
+    // Pass the DockerConfigView function item and the 'static props.
     //    let mut dom = VirtualDom::new_with_props(
     //        DockerConfigView, // The component function
     //        props,            // The 'static props
     //    );
 
-        // Rebuild the DOM
+    // Rebuild the DOM
     //    let _mutations = dom.rebuild();
 
-        // Render to string
+    // Render to string
     //    let output = dioxus_ssr::render(&dom);
     //    assert!(!output.is_empty(), "Rendered output should not be empty");
-   // }
+    // }
 
     // As noted in the plan, more detailed tests for validation logic, state changes from input,
     // and callback invocation are complex to achieve in Dioxus pure unit tests without

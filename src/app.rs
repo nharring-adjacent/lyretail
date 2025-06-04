@@ -13,7 +13,7 @@ use std::time::Instant; // Added for LogStats
 
 use anyhow::Error;
 use drain_flow::drains::api::Drain; // Added this line
-// use drain_flow::drains::simple::SingleLayer; // Already imported effectively by line below
+                                    // use drain_flow::drains::simple::SingleLayer; // Already imported effectively by line below
 use parking_lot::{Mutex, RwLock};
 use tokio::{sync::mpsc, task}; // mpsc also used in process_lines
 use tracing::{error, instrument}; // error also used in process_lines

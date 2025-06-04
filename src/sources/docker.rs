@@ -1,11 +1,11 @@
 // src/sources/docker.rs
 use async_trait::async_trait;
 use bollard::container::{ListContainersOptions, LogOutput};
-use bollard::Docker;
-use bollard::models::ContainerSummary;
 use bollard::errors::Error as BollardError; // Corrected import
+use bollard::models::ContainerSummary;
+use bollard::Docker;
 use cfg_if::cfg_if; // For conditional compilation
-// shellexpand will be used via its expanded name, no direct `use shellexpand;` needed if calling `shellexpand::tilde`
+                    // shellexpand will be used via its expanded name, no direct `use shellexpand;` needed if calling `shellexpand::tilde`
 use std::default::Default;
 use tokio::sync::mpsc;
 use tokio_stream::StreamExt;
@@ -34,7 +34,8 @@ impl DockerReader {
         timestamps: bool,
         tail: String,
         docker_client: Option<Docker>, // Allow injecting a client for testing
-    ) -> Result<Self, BollardError> { // Changed to BollardError
+    ) -> Result<Self, BollardError> {
+        // Changed to BollardError
         let docker = match docker_client {
             Some(client) => client,
             None => connect_to_docker_with_fallback().await?, // Use new helper
@@ -121,9 +122,9 @@ async fn connect_to_docker_with_fallback() -> Result<Docker, BollardError> {
     }
 }
 
-
-pub async fn list_running_containers()
-    -> Result<Vec<bollard::models::ContainerSummary>, BollardError> { // Changed to BollardError
+pub async fn list_running_containers(
+) -> Result<Vec<bollard::models::ContainerSummary>, BollardError> {
+    // Changed to BollardError
     let docker = connect_to_docker_with_fallback().await?; // Use new helper
     let options = Some(ListContainersOptions::<String> {
         all: false,
@@ -318,7 +319,10 @@ mod tests {
         match list_running_containers().await {
             Ok(containers) => {
                 // Successfully listed containers. Print count for info.
-                println!("Successfully listed {} running containers.", containers.len());
+                println!(
+                    "Successfully listed {} running containers.",
+                    containers.len()
+                );
                 // You could add more assertions here if needed, e.g., inspect container properties.
                 assert!(true); // Indicates success
             }
@@ -334,13 +338,17 @@ mod tests {
                     || error_string.contains("protocol error") // Can happen if not a Docker endpoint
                     || error_string.contains("invalid scheme") // e.g. if DOCKER_HOST is misconfigured
                     || error_string.contains("hyper") // Generic hyper error, often connection related
-                    || error_string.contains("Permission denied") // Added for OS error 13
+                    || error_string.contains("Permission denied")
+                // Added for OS error 13
                 {
                     println!("Could not connect to Docker to list containers (which is expected in some CI environments): {}", e);
                     // Pass the test if it's a connection issue
                 } else {
                     // For other errors, fail the test
-                    panic!("Failed to list running containers with an unexpected error: {}", e);
+                    panic!(
+                        "Failed to list running containers with an unexpected error: {}",
+                        e
+                    );
                 }
             }
         }

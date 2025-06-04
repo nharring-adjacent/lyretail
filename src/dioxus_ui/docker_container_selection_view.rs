@@ -1,8 +1,8 @@
 #![allow(non_snake_case)] // Dioxus components use PascalCase
 
-use dioxus::prelude::*;
-use bollard::models::ContainerSummary as BollardContainerSummary;
 use crate::sources::docker::list_running_containers;
+use bollard::models::ContainerSummary as BollardContainerSummary;
+use dioxus::prelude::*;
 
 // Struct to hold displayable container info
 #[derive(Clone, Debug, PartialEq)]
@@ -17,7 +17,9 @@ pub struct DockerContainerSelectionProps<'a> {
     pub on_select_container: Option<EventHandler<'a, String>>,
 }
 
-pub fn DockerContainerSelectionView<'a>(cx: Scope<'a, DockerContainerSelectionProps<'a>>) -> Element<'a> {
+pub fn DockerContainerSelectionView<'a>(
+    cx: Scope<'a, DockerContainerSelectionProps<'a>>,
+) -> Element<'a> {
     let containers = use_state(cx, || Vec::<SelectedContainer>::new());
     let manual_input = use_state(cx, String::new);
     let error_message = use_state(cx, || None::<String>);
@@ -29,7 +31,8 @@ pub fn DockerContainerSelectionView<'a>(cx: Scope<'a, DockerContainerSelectionPr
         let error_message = error_message.clone();
         let is_loading = is_loading.clone();
 
-        move |_| { // The argument is not used, could be () or an event
+        move |_| {
+            // The argument is not used, could be () or an event
             let containers_clone = containers.clone();
             let error_message_clone = error_message.clone();
             let is_loading_clone = is_loading.clone();
@@ -43,7 +46,9 @@ pub fn DockerContainerSelectionView<'a>(cx: Scope<'a, DockerContainerSelectionPr
                         let new_containers: Vec<SelectedContainer> = summaries
                             .into_iter()
                             .map(|summary: BollardContainerSummary| {
-                                let name = summary.names.unwrap_or_else(|| vec!["N/A".to_string()])
+                                let name = summary
+                                    .names
+                                    .unwrap_or_else(|| vec!["N/A".to_string()])
                                     .get(0)
                                     .unwrap_or(&"N/A".to_string())
                                     .trim_start_matches('/') // Docker names often start with /
