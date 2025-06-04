@@ -84,7 +84,7 @@ pub fn DockerContainerSelectionView<'a>(cx: Scope<'a, DockerContainerSelectionPr
             if *is_loading.get() {
                 rsx! { p { "Loading containers..." } }
             } else if let Some(err_msg) = error_message.get() {
-                rsx! { p { class: "error-message", "{err_msg}" } }
+                rsx! { p { class: "p-2 mb-3 text-red-700 bg-red-100 border border-red-400 rounded", "{err_msg}" } }
             } else {
                 rsx! {
                     ul {

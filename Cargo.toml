@@ -46,6 +46,8 @@ dioxus-desktop = "0.4"
 dioxus-web = "0.4"
 bollard = "0.14.0"
 serde = { version = "1.0", features = ["derive"] } # Added serde
+shellexpand = "3.1" # Added shellexpand
+cfg-if = "1.0"      # Corrected: Added cfg-if
 
 [[bin]]
 name = "dioxus-desktop"

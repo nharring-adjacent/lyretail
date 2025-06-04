@@ -1,8 +1,11 @@
 // src/sources/docker.rs
 use async_trait::async_trait;
-use bollard::container::{ListContainersOptions, LogOutput}; // LogsOptions removed, Added ListContainersOptions
+use bollard::container::{ListContainersOptions, LogOutput};
 use bollard::Docker;
-use bollard::models::ContainerSummary; // Changed from bollard_models
+use bollard::models::ContainerSummary;
+use bollard::errors::Error as BollardError; // Corrected import
+use cfg_if::cfg_if; // For conditional compilation
+// shellexpand will be used via its expanded name, no direct `use shellexpand;` needed if calling `shellexpand::tilde`
 use std::default::Default;
 use tokio::sync::mpsc;
 use tokio_stream::StreamExt;
@@ -31,10 +34,10 @@ impl DockerReader {
         timestamps: bool,
         tail: String,
         docker_client: Option<Docker>, // Allow injecting a client for testing
-    ) -> Result<Self, bollard::errors::Error> {
+    ) -> Result<Self, BollardError> { // Changed to BollardError
         let docker = match docker_client {
             Some(client) => client,
-            None => Docker::connect_with_local_defaults()?,
+            None => connect_to_docker_with_fallback().await?, // Use new helper
         };
 
         // Basic parsing for relative time strings like "10m", "1h" or RFC3339.
@@ -68,10 +71,61 @@ impl DockerReader {
     }
 }
 
+// Helper function to connect to Docker with macOS fallback
+async fn connect_to_docker_with_fallback() -> Result<Docker, BollardError> {
+    match Docker::connect_with_local_defaults() {
+        Ok(docker) => Ok(docker),
+        Err(original_error) => {
+            cfg_if! {
+                if #[cfg(target_os = "macos")] {
+                    match &original_error {
+                        BollardError::IO { err: io_err, .. } => {
+                            if io_err.kind() == std::io::ErrorKind::NotFound ||
+                               io_err.to_string().contains("No such file or directory") ||
+                               io_err.to_string().contains("os error 2") {
+
+                                match ::shellexpand::tilde("~/Library/Containers/com.docker.docker/Data/docker.raw.sock") {
+                                    Ok(expanded_path) => {
+                                        match Docker::connect_with_socket_path(expanded_path.as_ref()) {
+                                            Ok(docker_instance) => {
+                                                info!("Connected to Docker via macOS fallback path: {}", expanded_path);
+                                                return Ok(docker_instance);
+                                            }
+                                            Err(fallback_err) => {
+                                                warn!("Failed to connect via macOS fallback path ({}): {}. Original error: {}", expanded_path, fallback_err, original_error);
+                                                return Err(BollardError::IO {
+                                                    err: std::io::Error::new(std::io::ErrorKind::Other, "Docker connection failed after fallback attempt"),
+                                                    host: expanded_path.into_owned(), // Provide some host context
+                                                });
+                                            }
+                                        }
+                                    }
+                                    Err(e) => {
+                                        warn!("Failed to expand tilde path for Docker socket: {}. Original error: {}", e, original_error);
+                                        // Return original error because fallback path itself is problematic
+                                        return Err(original_error);
+                                    }
+                                }
+                            }
+                        }
+                        // Potentially handle other BollardError variants if they also indicate "not found"
+                        // For example: BollardError::DockerResponseNotFoundError { .. } might be relevant
+                        // but typically refers to API resource not found, not socket file.
+                        _ => { /* Not an IO error or not the specific kind for fallback */ }
+                    }
+                }
+            }
+            // If not macOS, or not the specific error for fallback, or if macOS fallback logic didn't return Ok early.
+            Err(original_error)
+        }
+    }
+}
+
+
 pub async fn list_running_containers()
-    -> Result<Vec<bollard::models::ContainerSummary>, bollard::errors::Error> { // Changed from bollard_models
-    let docker = Docker::connect_with_local_defaults()?;
-    let options = Some(ListContainersOptions::<String> { // Added <String>
+    -> Result<Vec<bollard::models::ContainerSummary>, BollardError> { // Changed to BollardError
+    let docker = connect_to_docker_with_fallback().await?; // Use new helper
+    let options = Some(ListContainersOptions::<String> {
         all: false,
         ..Default::default()
     });
