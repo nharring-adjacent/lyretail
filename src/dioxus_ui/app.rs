@@ -8,6 +8,8 @@ use crate::dioxus_ui::log_group_view::{LogGroupDetailProps, LogGroupView, LogGro
 
 // Import DockerConfigView and its props
 use crate::dioxus_ui::docker_config_view::{DockerConfigState, DockerConfigView};
+// Import DockerContainerSelectionView
+use crate::dioxus_ui::docker_container_selection_view::DockerContainerSelectionView;
 // Import StatsView and its props
 use crate::app::LogStats; // For AppProps
 use crate::dioxus_ui::stats_view::StatsView; // StatsViewProps not directly used in App's render call signature, but good for context
@@ -20,6 +22,7 @@ use tracing::info; // For logging
 pub enum CurrentView {
     Dashboard, // Default view showing logs or summaries
     ConfigureDocker,
+    SelectDockerContainer, // Added new variant
     // Potentially other views like ConfigureFile, ConfigureCloudwatch etc.
 }
 
@@ -39,6 +42,7 @@ impl PartialEq for AppProps {
 pub fn App(cx: Scope<AppProps>) -> Element {
     // State for the current view
     let current_view = use_state(cx, || CurrentView::Dashboard);
+    let selected_container_for_config = use_state(cx, || Option::<String>::None); // Added state for selected container
 
     // Placeholder for Docker configuration received from the form
     let _docker_config = use_state(cx, || Option::<DockerConfigState>::None); // Changed to _docker_config as it's not read yet
@@ -58,14 +62,23 @@ pub fn App(cx: Scope<AppProps>) -> Element {
 
     // Callback for DockerConfigView submission
     let handle_docker_config_submit = {
-        let current_view = current_view.clone();
-        let docker_config_state = _docker_config.clone(); // Renamed for clarity
+        let current_view_clone = current_view.clone(); // Clone for this closure
+        let docker_config_state = _docker_config.clone();
         move |config: DockerConfigState| {
-            info!("Docker configuration submitted: {:?}", config); // Use tracing::info!
+            info!("Docker configuration submitted: {:?}", config);
             docker_config_state.set(Some(config));
-            // Here, you would typically trigger the backend to restart with new settings
-            // or update a shared application state.
-            current_view.set(CurrentView::Dashboard); // Switch back to dashboard
+            current_view_clone.set(CurrentView::Dashboard);
+        }
+    };
+
+    // Callback for DockerContainerSelectionView
+    let handle_container_select = {
+        let current_view_clone = current_view.clone(); // Clone for this closure
+        let selected_container_for_config_clone = selected_container_for_config.clone();
+        move |container_id: String| {
+            info!("Container selected: {}", container_id);
+            selected_container_for_config_clone.set(Some(container_id));
+            current_view_clone.set(CurrentView::ConfigureDocker);
         }
     };
 
@@ -90,6 +103,11 @@ pub fn App(cx: Scope<AppProps>) -> Element {
                     onclick: move |_| current_view.set(CurrentView::ConfigureDocker),
                     "Configure Docker Logs"
                 }
+                button {
+                    class: "px-3 py-1 border rounded hover:bg-gray-100",
+                    onclick: move |_| current_view.set(CurrentView::SelectDockerContainer),
+                    "Select Docker Container"
+                }
                 // Add other source config buttons here later
             }
 
@@ -104,9 +122,27 @@ pub fn App(cx: Scope<AppProps>) -> Element {
                     LogGroupView { ..props_for_empty_view }    // Example
                     // Later, this dashboard should show actual logs or stats
                 },
-                CurrentView::ConfigureDocker => rsx! {
-                    DockerConfigView {
-                        on_submit: handle_docker_config_submit
+                CurrentView::ConfigureDocker => {
+                    let initial_name_opt = selected_container_for_config.get().clone(); // Get a clone
+                    selected_container_for_config.set(None); // Set the state to None
+                    if let Some(name) = initial_name_opt {
+                        rsx! {
+                            DockerConfigView {
+                                on_submit: handle_docker_config_submit,
+                                initial_container_name: name // Pass String
+                            }
+                        }
+                    } else {
+                        rsx! {
+                            DockerConfigView { // Omit prop if None
+                                on_submit: handle_docker_config_submit
+                            }
+                        }
+                    }
+                },
+                CurrentView::SelectDockerContainer => rsx! {
+                    DockerContainerSelectionView {
+                        on_select_container: handle_container_select // Pass closure directly
                     }
                 },
                 // Handle other views here

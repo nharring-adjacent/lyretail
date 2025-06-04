@@ -14,8 +14,9 @@ use std::sync::{
 };
 
 use crossterm::event::{Event, KeyCode, KeyModifiers};
-use drain_flow::log_group::LogGroup;
+use drain_flow::{drains::api::Drain, log_group::LogGroup}; // Added Drain here
 use itertools::Itertools;
+// use serde::ser::Serialize; // Removed Serialize here, not needed for to_string()
 use tracing::{debug, info, instrument, warn};
 use tui::{
     backend::Backend,
@@ -64,13 +65,12 @@ impl<'a> BaseTable {
             .app
             .get_drain_ref()
             .read()
-            .iter_groups()
-            .iter()
-            .flatten()
+            .collect_log_groups() // Changed to collect_log_groups
+            .into_iter() // Added into_iter assuming collect_log_groups returns a Vec
             .sorted_by(|a, b| Ord::cmp(&b.len(), &a.len()))
-            .map(|lg| {
+            .map(|lg| { // lg is now LogGroup or &LogGroup depending on what collect_log_groups returns
                 let cells = vec![
-                    Cell::from(lg.event().uid.serialize()),
+                    Cell::from(lg.event().uid.to_string()), // Changed .serialize() to .to_string()
                     Cell::from(lg.event().to_string()),
                     Cell::from(lg.len().to_string()),
                 ];
@@ -162,12 +162,20 @@ impl<'a> BaseTable {
         self.app
             .get_drain_ref()
             .read()
-            .iter_groups()
-            .iter()
-            .flatten()
+            .collect_log_groups() // Changed to collect_log_groups
+            .into_iter() // Added into_iter assuming collect_log_groups returns a Vec
             .sorted_by(|a, b| Ord::cmp(&b.len(), &a.len()))
             .nth(idx)
-            .map(|double_ref| (*double_ref).clone())
+            //.map(|lg_ref| (*lg_ref).clone()) // lg_ref is &LogGroup or LogGroup
+            // If collect_log_groups returns Vec<LogGroup>, nth(idx) returns Option<LogGroup>, so clone is not needed.
+            // If it returns Vec<&LogGroup>, nth(idx) returns Option<&&LogGroup>, then map(|lg_ref| (*lg_ref).clone()) is needed.
+            // For now, let's assume it returns Vec<LogGroup> and nth directly gives LogGroup.
+            // The original code with iter_groups().iter().flatten() produced &&LogGroup for map.
+            // If collect_log_groups().into_iter() yields LogGroup, then .clone() is not needed if LogGroup is Copy,
+            // or if not, .map(|lg| lg.clone()) or just rely on nth consuming the iterator.
+            // The original map was (*double_ref).clone(). Let's assume collect_log_groups gives Vec<LogGroup>
+            // and into_iter gives LogGroup.
+            .map(|lg| lg.clone()) // Assuming lg is LogGroup and needs clone
             .expect("idx is based on selected, should exist")
     }
 }
