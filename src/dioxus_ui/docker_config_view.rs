@@ -18,44 +18,36 @@ pub struct DockerConfigState {
 // Define props for the component, including a callback for when config is submitted
 #[derive(Props)] // Removed PartialEq from derive
 pub struct DockerConfigViewProps<'a> {
-    // Callback to notify parent about the configuration
-    // For now, let's assume it just takes the state.
-    // Later, this might involve passing an Application/UI message or specific action.
-    pub on_submit: Option<EventHandler<'a, DockerConfigState>>, // Made field public for potential external construction if needed
+    pub on_submit: Option<EventHandler<'a, DockerConfigState>>,
+    #[props(optional)] // Explicitly mark as optional
+    pub initial_container_name: Option<String>,
 }
 
 impl<'a> PartialEq for DockerConfigViewProps<'a> {
-    fn eq(&self, _other: &Self) -> bool {
-        // EventHandlers are typically closures. Comparing them for equality is non-trivial
-        // and often not what's desired for Dioxus's re-render logic.
-        // If the parent passes a new closure instance, Dioxus might see it as a new prop.
-        // By returning `true` here (assuming `on_submit` is the only field, or other fields
-        // are compared separately if they exist), we state that changes to `on_submit` alone
-        // (i.e. a different closure instance but functionally identical) should not cause a re-render
-        // *based on this PartialEq implementation*. Dioxus may still re-render for other reasons.
-        // If there were other data fields in Props, they should be compared here:
-        // e.g., self.some_data == other.some_data
-        // Since `on_submit` is the only field, and we're effectively ignoring it for PartialEq,
-        // all instances of `DockerConfigViewProps` are considered equal by this implementation.
-        true
+    fn eq(&self, other: &Self) -> bool {
+        // Compare only data fields, assume on_submit (EventHandler) does not influence equality.
+        self.initial_container_name == other.initial_container_name
     }
 }
 
 impl<'a> Clone for DockerConfigViewProps<'a> {
     fn clone(&self) -> Self {
         Self {
-            on_submit: None, // EventHandler is not Clone, so set to None.
-                             // This is acceptable for test scenarios where the handler's
-                             // invocation might not be the focus, or where None is valid.
-                             // If there were other cloneable fields, they would be cloned here:
-                             // some_other_field: self.some_other_field.clone(),
+            on_submit: None, // EventHandler is not Clone
+            initial_container_name: self.initial_container_name.clone(),
         }
     }
 }
 
 pub fn DockerConfigView<'a>(cx: Scope<'a, DockerConfigViewProps<'a>>) -> Element<'a> {
     // Use a local state to manage the form inputs
-    let config_state = use_state(cx, DockerConfigState::default);
+    let config_state = use_state(cx, || {
+        let initial_name = cx.props.initial_container_name.clone().unwrap_or_default();
+        DockerConfigState {
+            container_name: initial_name,
+            ..DockerConfigState::default() // Keep other fields as default
+        }
+    });
 
     // Variable to hold potential validation error messages
     let error_message = use_state(cx, String::new);
@@ -202,10 +194,10 @@ pub fn DockerConfigView<'a>(cx: Scope<'a, DockerConfigViewProps<'a>>) -> Element
 
 #[cfg(test)]
 mod tests {
-    
-     // NoOpMutations import removed
-                                  // std::sync::Arc and Mutex are not strictly needed for the basic render test,
-                                  // but might be if we were testing callbacks.
+
+    // NoOpMutations import removed
+    // std::sync::Arc and Mutex are not strictly needed for the basic render test,
+    // but might be if we were testing callbacks.
 
     // Test temporarily disabled due to unresolved lifetime issues with
     // `VirtualDom::new_with_props` and props (`DockerConfigViewProps<'a>`)
@@ -215,24 +207,24 @@ mod tests {
     // Needs further investigation or an alternative testing strategy (e.g., integration test).
     // #[test]
     //fn test_docker_config_view_renders_basic() {
-        // Explicitly type props as DockerConfigViewProps<'static>
-        // This is possible because on_submit: None means the 'a lifetime from EventHandler
-        // can be 'static. DockerConfigState is 'static.
+    // Explicitly type props as DockerConfigViewProps<'static>
+    // This is possible because on_submit: None means the 'a lifetime from EventHandler
+    // can be 'static. DockerConfigState is 'static.
     //    let props: DockerConfigViewProps<'static> = DockerConfigViewProps { on_submit: None };
 
-        // Pass the DockerConfigView function item and the 'static props.
+    // Pass the DockerConfigView function item and the 'static props.
     //    let mut dom = VirtualDom::new_with_props(
     //        DockerConfigView, // The component function
     //        props,            // The 'static props
     //    );
 
-        // Rebuild the DOM
+    // Rebuild the DOM
     //    let _mutations = dom.rebuild();
 
-        // Render to string
+    // Render to string
     //    let output = dioxus_ssr::render(&dom);
     //    assert!(!output.is_empty(), "Rendered output should not be empty");
-   // }
+    // }
 
     // As noted in the plan, more detailed tests for validation logic, state changes from input,
     // and callback invocation are complex to achieve in Dioxus pure unit tests without

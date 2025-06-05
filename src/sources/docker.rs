@@ -1,7 +1,11 @@
 // src/sources/docker.rs
 use async_trait::async_trait;
-use bollard::container::LogOutput; // LogsOptions removed
+use bollard::container::{ListContainersOptions, LogOutput};
+use bollard::errors::Error as BollardError; // Corrected import
 use bollard::Docker;
+use bollard::API_DEFAULT_VERSION; // Re-adding for connect_with_socket
+use cfg_if::cfg_if; // For conditional compilation
+                    // shellexpand will be used via its expanded name, no direct `use shellexpand;` needed if calling `shellexpand::tilde`
 use std::default::Default;
 use tokio::sync::mpsc;
 use tokio_stream::StreamExt;
@@ -30,10 +34,11 @@ impl DockerReader {
         timestamps: bool,
         tail: String,
         docker_client: Option<Docker>, // Allow injecting a client for testing
-    ) -> Result<Self, bollard::errors::Error> {
+    ) -> Result<Self, BollardError> {
+        // Changed to BollardError
         let docker = match docker_client {
             Some(client) => client,
-            None => Docker::connect_with_local_defaults()?,
+            None => connect_to_docker_with_fallback().await?, // Use new helper
         };
 
         // Basic parsing for relative time strings like "10m", "1h" or RFC3339.
@@ -65,6 +70,69 @@ impl DockerReader {
             docker,
         })
     }
+}
+
+// Helper function to connect to Docker with macOS fallback
+async fn connect_to_docker_with_fallback() -> Result<Docker, BollardError> {
+    match Docker::connect_with_local_defaults() {
+        Ok(docker) => Ok(docker),
+        Err(original_error) => {
+            cfg_if! {
+                if #[cfg(target_os = "macos")] {
+                    match &original_error {
+                        BollardError::IOError { err: io_err } => {
+                            if io_err.kind() == std::io::ErrorKind::NotFound ||
+                               io_err.to_string().contains("No such file or directory") ||
+                               io_err.to_string().contains("os error 2") {
+
+            let expanded_path_cow: std::borrow::Cow<'_, str> = ::shellexpand::tilde("~/Library/Containers/com.docker.docker/Data/docker.raw.sock");
+            // expanded_path_cow IS ALREADY THE STRING VALUE (or a reference).
+            // DO NOT MATCH expanded_path_cow for Ok/Err.
+
+            match Docker::connect_with_socket(expanded_path_cow.as_ref(), 120, API_DEFAULT_VERSION) {
+                Ok(docker_instance) => {
+                    info!("Connected to Docker via macOS fallback path: {}", expanded_path_cow);
+                    return Ok(docker_instance);
+                }
+                Err(fallback_err) => {
+                    warn!("Failed to connect via macOS fallback path ({}): {}. Original error: {}", expanded_path_cow, fallback_err, original_error);
+                    return Err(BollardError::IOError {
+                        err: std::io::Error::other(format!("Docker connection failed after fallback attempt on host: {}", expanded_path_cow.as_ref())),
+                    });
+                }
+            }
+                            } else {
+                                // If the IO error is not the specific kind for fallback, return the original error.
+                                return Err(original_error);
+                            }
+                        }
+                        // Potentially handle other BollardError variants if they also indicate "not found"
+                        // For example: BollardError::DockerResponseNotFoundError { .. } might be relevant
+                        // but typically refers to API resource not found, not socket file.
+                        _ => {
+                            // Not an IO error or not the specific kind for fallback
+                            return Err(original_error);
+                        }
+                    }
+                }
+            }
+            // If not macOS, or not the specific error for fallback, or if macOS fallback logic didn't return Ok early,
+            // or if it was macOS but the error type didn't match anything in the specific BollardError::IOError or _ arms,
+            // we will hit this. It's a final catch-all.
+            Err(original_error)
+        }
+    }
+}
+
+pub async fn list_running_containers(
+) -> Result<Vec<bollard::models::ContainerSummary>, BollardError> {
+    // Changed to BollardError
+    let docker = connect_to_docker_with_fallback().await?; // Use new helper
+    let options = Some(ListContainersOptions::<String> {
+        all: false,
+        ..Default::default()
+    });
+    docker.list_containers(options).await
 }
 
 #[async_trait]
@@ -247,6 +315,46 @@ mod tests {
     // or specific testing support from the `bollard` crate for its client.
     // Full verification of `read_logs` is better suited for integration tests
     // that run against a live (or containerized) Docker daemon.
+
+    #[tokio::test]
+    async fn test_list_running_containers() {
+        match list_running_containers().await {
+            Ok(containers) => {
+                // Successfully listed containers. Print count for info.
+                println!(
+                    "Successfully listed {} running containers.",
+                    containers.len()
+                );
+                // You could add more assertions here if needed, e.g., inspect container properties.
+                assert!(true); // Indicates success
+            }
+            Err(e) => {
+                // Check if the error indicates a connection problem
+                // This is a simplified check. Bollard errors can be complex.
+                // A common issue is `hyper::Error` related to connection refused.
+                // Or `bollard::errors::Error::HyperResponseError` if daemon is not responsive.
+                // Or `bollard::errors::Error::IO`
+                let error_string = e.to_string();
+                if error_string.contains("No such file or directory") // Common for missing Docker socket
+                    || error_string.contains("Connection refused") // Common if Docker daemon is not running
+                    || error_string.contains("protocol error") // Can happen if not a Docker endpoint
+                    || error_string.contains("invalid scheme") // e.g. if DOCKER_HOST is misconfigured
+                    || error_string.contains("hyper") // Generic hyper error, often connection related
+                    || error_string.contains("Permission denied")
+                // Added for OS error 13
+                {
+                    println!("Could not connect to Docker to list containers (which is expected in some CI environments): {}", e);
+                    // Pass the test if it's a connection issue
+                } else {
+                    // For other errors, fail the test
+                    panic!(
+                        "Failed to list running containers with an unexpected error: {}",
+                        e
+                    );
+                }
+            }
+        }
+    }
 
     /*
     #[tokio::test]

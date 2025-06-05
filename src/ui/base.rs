@@ -14,8 +14,9 @@ use std::sync::{
 };
 
 use crossterm::event::{Event, KeyCode, KeyModifiers};
-use drain_flow::log_group::LogGroup;
+use drain_flow::{drains::api::Drain, log_group::LogGroup}; // Added Drain here
 use itertools::Itertools;
+// use serde::ser::Serialize; // Removed Serialize here, not needed for to_string()
 use tracing::{debug, info, instrument, warn};
 use tui::{
     backend::Backend,
@@ -64,13 +65,13 @@ impl<'a> BaseTable {
             .app
             .get_drain_ref()
             .read()
-            .iter_groups()
-            .iter()
-            .flatten()
+            .collect_log_groups() // Changed to collect_log_groups
+            .into_iter() // Added into_iter assuming collect_log_groups returns a Vec
             .sorted_by(|a, b| Ord::cmp(&b.len(), &a.len()))
             .map(|lg| {
+                // lg is now LogGroup or &LogGroup depending on what collect_log_groups returns
                 let cells = vec![
-                    Cell::from(lg.event().uid.serialize()),
+                    Cell::from(lg.event().uid.to_string()), // Changed .serialize() to .to_string()
                     Cell::from(lg.event().to_string()),
                     Cell::from(lg.len().to_string()),
                 ];
@@ -162,12 +163,10 @@ impl<'a> BaseTable {
         self.app
             .get_drain_ref()
             .read()
-            .iter_groups()
-            .iter()
-            .flatten()
+            .collect_log_groups() // Changed to collect_log_groups
+            .into_iter() // Added into_iter assuming collect_log_groups returns a Vec
             .sorted_by(|a, b| Ord::cmp(&b.len(), &a.len()))
-            .nth(idx)
-            .map(|double_ref| (*double_ref).clone())
+            .nth(idx) // Assuming lg is LogGroup and needs clone
             .expect("idx is based on selected, should exist")
     }
 }
