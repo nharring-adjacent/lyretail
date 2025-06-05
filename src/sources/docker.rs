@@ -2,7 +2,7 @@
 use async_trait::async_trait;
 use bollard::container::{ListContainersOptions, LogOutput};
 use bollard::errors::Error as BollardError; // Corrected import
-use bollard::models::ContainerSummary;
+use bollard::API_DEFAULT_VERSION;
 use bollard::Docker;
 use cfg_if::cfg_if; // For conditional compilation
                     // shellexpand will be used via its expanded name, no direct `use shellexpand;` needed if calling `shellexpand::tilde`
@@ -80,23 +80,22 @@ async fn connect_to_docker_with_fallback() -> Result<Docker, BollardError> {
             cfg_if! {
                 if #[cfg(target_os = "macos")] {
                     match &original_error {
-                        BollardError::IO { err: io_err, .. } => {
+                        BollardError::IOError { err: io_err } => {
                             if io_err.kind() == std::io::ErrorKind::NotFound ||
                                io_err.to_string().contains("No such file or directory") ||
                                io_err.to_string().contains("os error 2") {
 
                                 match ::shellexpand::tilde("~/Library/Containers/com.docker.docker/Data/docker.raw.sock") {
                                     Ok(expanded_path) => {
-                                        match Docker::connect_with_socket_path(expanded_path.as_ref()) {
+                                        match Docker::connect_with_socket(expanded_path.as_ref(), 120, API_DEFAULT_VERSION) {
                                             Ok(docker_instance) => {
                                                 info!("Connected to Docker via macOS fallback path: {}", expanded_path);
                                                 return Ok(docker_instance);
                                             }
                                             Err(fallback_err) => {
                                                 warn!("Failed to connect via macOS fallback path ({}): {}. Original error: {}", expanded_path, fallback_err, original_error);
-                                                return Err(BollardError::IO {
-                                                    err: std::io::Error::new(std::io::ErrorKind::Other, "Docker connection failed after fallback attempt"),
-                                                    host: expanded_path.into_owned(), // Provide some host context
+                                                return Err(BollardError::IOError {
+                                                    err: std::io::Error::new(std::io::ErrorKind::Other, format!("Docker connection failed after fallback attempt on host: {}", expanded_path.as_ref())),
                                                 });
                                             }
                                         }
