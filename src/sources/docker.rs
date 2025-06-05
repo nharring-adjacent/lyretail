@@ -2,8 +2,8 @@
 use async_trait::async_trait;
 use bollard::container::{ListContainersOptions, LogOutput};
 use bollard::errors::Error as BollardError; // Corrected import
-use bollard::API_DEFAULT_VERSION; // Re-adding for connect_with_socket
 use bollard::Docker;
+use bollard::API_DEFAULT_VERSION; // Re-adding for connect_with_socket
 use cfg_if::cfg_if; // For conditional compilation
                     // shellexpand will be used via its expanded name, no direct `use shellexpand;` needed if calling `shellexpand::tilde`
 use std::default::Default;
