@@ -95,7 +95,7 @@ impl Args {
                         "Argument --docker-container-name is required when source_type is Docker.",
                     )
                     // .with_cmd(&Args::command()) // Removed this line as with_cmd is private
-                    .exit());
+                    .kind());
                 }
                 // Potentially validate docker_since/until formats if they are not parsed by clap directly
                 // For now, assume they are strings and will be parsed by the DockerReader.

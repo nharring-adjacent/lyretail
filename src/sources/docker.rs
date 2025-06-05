@@ -106,16 +106,24 @@ async fn connect_to_docker_with_fallback() -> Result<Docker, BollardError> {
                                         return Err(original_error);
                                     }
                                 }
+                            } else {
+                                // If the IO error is not the specific kind for fallback, return the original error.
+                                return Err(original_error);
                             }
                         }
                         // Potentially handle other BollardError variants if they also indicate "not found"
                         // For example: BollardError::DockerResponseNotFoundError { .. } might be relevant
                         // but typically refers to API resource not found, not socket file.
-                        _ => { /* Not an IO error or not the specific kind for fallback */ }
+                        _ => {
+                            // Not an IO error or not the specific kind for fallback
+                            return Err(original_error);
+                        }
                     }
                 }
             }
-            // If not macOS, or not the specific error for fallback, or if macOS fallback logic didn't return Ok early.
+            // If not macOS, or not the specific error for fallback, or if macOS fallback logic didn't return Ok early,
+            // or if it was macOS but the error type didn't match anything in the specific BollardError::IOError or _ arms,
+            // we will hit this. It's a final catch-all.
             Err(original_error)
         }
     }
