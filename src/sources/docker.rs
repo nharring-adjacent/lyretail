@@ -97,7 +97,7 @@ async fn connect_to_docker_with_fallback() -> Result<Docker, BollardError> {
                 Err(fallback_err) => {
                     warn!("Failed to connect via macOS fallback path ({}): {}. Original error: {}", expanded_path_cow, fallback_err, original_error);
                     return Err(BollardError::IOError {
-                        err: std::io::Error::new(std::io::ErrorKind::Other, format!("Docker connection failed after fallback attempt on host: {}", expanded_path_cow.as_ref())),
+                        err: std::io::Error::other(format!("Docker connection failed after fallback attempt on host: {}", expanded_path_cow.as_ref())),
                     });
                 }
             }

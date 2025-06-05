@@ -166,17 +166,7 @@ impl<'a> BaseTable {
             .collect_log_groups() // Changed to collect_log_groups
             .into_iter() // Added into_iter assuming collect_log_groups returns a Vec
             .sorted_by(|a, b| Ord::cmp(&b.len(), &a.len()))
-            .nth(idx)
-            //.map(|lg_ref| (*lg_ref).clone()) // lg_ref is &LogGroup or LogGroup
-            // If collect_log_groups returns Vec<LogGroup>, nth(idx) returns Option<LogGroup>, so clone is not needed.
-            // If it returns Vec<&LogGroup>, nth(idx) returns Option<&&LogGroup>, then map(|lg_ref| (*lg_ref).clone()) is needed.
-            // For now, let's assume it returns Vec<LogGroup> and nth directly gives LogGroup.
-            // The original code with iter_groups().iter().flatten() produced &&LogGroup for map.
-            // If collect_log_groups().into_iter() yields LogGroup, then .clone() is not needed if LogGroup is Copy,
-            // or if not, .map(|lg| lg.clone()) or just rely on nth consuming the iterator.
-            // The original map was (*double_ref).clone(). Let's assume collect_log_groups gives Vec<LogGroup>
-            // and into_iter gives LogGroup.
-            .map(|lg| lg.clone()) // Assuming lg is LogGroup and needs clone
+            .nth(idx) // Assuming lg is LogGroup and needs clone
             .expect("idx is based on selected, should exist")
     }
 }

@@ -20,7 +20,7 @@ pub struct DockerContainerSelectionProps<'a> {
 pub fn DockerContainerSelectionView<'a>(
     cx: Scope<'a, DockerContainerSelectionProps<'a>>,
 ) -> Element<'a> {
-    let containers = use_state(cx, || Vec::<SelectedContainer>::new());
+    let containers = use_state(cx, Vec::<SelectedContainer>::new);
     let manual_input = use_state(cx, String::new);
     let error_message = use_state(cx, || None::<String>);
     let is_loading = use_state(cx, || false);
@@ -48,8 +48,7 @@ pub fn DockerContainerSelectionView<'a>(
                             .map(|summary: BollardContainerSummary| {
                                 let name = summary
                                     .names
-                                    .unwrap_or_else(|| vec!["N/A".to_string()])
-                                    .get(0)
+                                    .unwrap_or_else(|| vec!["N/A".to_string()]).first()
                                     .unwrap_or(&"N/A".to_string())
                                     .trim_start_matches('/') // Docker names often start with /
                                     .to_string();
