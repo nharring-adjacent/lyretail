@@ -2,6 +2,7 @@
 use async_trait::async_trait;
 use bollard::container::{ListContainersOptions, LogOutput};
 use bollard::errors::Error as BollardError; // Corrected import
+use bollard::API_DEFAULT_VERSION; // Re-adding for connect_with_socket
 use bollard::Docker;
 use cfg_if::cfg_if; // For conditional compilation
                     // shellexpand will be used via its expanded name, no direct `use shellexpand;` needed if calling `shellexpand::tilde`
@@ -84,29 +85,22 @@ async fn connect_to_docker_with_fallback() -> Result<Docker, BollardError> {
                                io_err.to_string().contains("No such file or directory") ||
                                io_err.to_string().contains("os error 2") {
 
-                                let expanded_path_result = ::shellexpand::tilde("~/Library/Containers/com.docker.docker/Data/docker.raw.sock");
-                                match expanded_path_result {
-                                    Ok(expanded_path) => {
-                                        // Now, match on the Docker connection attempt
-                                        match Docker::connect_with_socket(expanded_path.as_ref(), 120, API_DEFAULT_VERSION) {
-                                            Ok(docker_instance) => {
-                                                info!("Connected to Docker via macOS fallback path: {}", expanded_path);
-                                                return Ok(docker_instance);
-                                            }
-                                            Err(fallback_err) => {
-                                                warn!("Failed to connect via macOS fallback path ({}): {}. Original error: {}", expanded_path, fallback_err, original_error);
-                                                return Err(BollardError::IOError {
-                                                    err: std::io::Error::new(std::io::ErrorKind::Other, format!("Docker connection failed after fallback attempt on host: {}", expanded_path.as_ref())),
-                                                });
-                                            }
-                                        }
-                                    }
-                                    Err(e) => {
-                                        warn!("Failed to expand tilde path for Docker socket: {}. Original error: {}", e, original_error);
-                                        // Return original error because fallback path itself is problematic
-                                        return Err(original_error);
-                                    }
-                                }
+            let expanded_path_cow: std::borrow::Cow<'_, str> = ::shellexpand::tilde("~/Library/Containers/com.docker.docker/Data/docker.raw.sock");
+            // expanded_path_cow IS ALREADY THE STRING VALUE (or a reference).
+            // DO NOT MATCH expanded_path_cow for Ok/Err.
+
+            match Docker::connect_with_socket(expanded_path_cow.as_ref(), 120, API_DEFAULT_VERSION) {
+                Ok(docker_instance) => {
+                    info!("Connected to Docker via macOS fallback path: {}", expanded_path_cow);
+                    return Ok(docker_instance);
+                }
+                Err(fallback_err) => {
+                    warn!("Failed to connect via macOS fallback path ({}): {}. Original error: {}", expanded_path_cow, fallback_err, original_error);
+                    return Err(BollardError::IOError {
+                        err: std::io::Error::new(std::io::ErrorKind::Other, format!("Docker connection failed after fallback attempt on host: {}", expanded_path_cow.as_ref())),
+                    });
+                }
+            }
                             } else {
                                 // If the IO error is not the specific kind for fallback, return the original error.
                                 return Err(original_error);
