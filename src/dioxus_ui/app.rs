@@ -9,7 +9,9 @@ use crate::dioxus_ui::log_group_view::{LogGroupDetailProps, LogGroupView, LogGro
 // Import DockerConfigView and its props
 use crate::dioxus_ui::docker_config_view::{DockerConfigState, DockerConfigView};
 // Import DockerContainerSelectionView
+use crate::dioxus_ui::docker_config_wizard::DockerConfigWizard;
 use crate::dioxus_ui::docker_container_selection_view::DockerContainerSelectionView;
+use crate::dioxus_ui::timeline_view::TimelineView;
 // Import StatsView and its props
 use crate::app::LogStats; // For AppProps
 use crate::dioxus_ui::stats_view::StatsView; // StatsViewProps not directly used in App's render call signature, but good for context
@@ -23,7 +25,8 @@ pub enum CurrentView {
     Dashboard, // Default view showing logs or summaries
     ConfigureDocker,
     SelectDockerContainer, // Added new variant
-                           // Potentially other views like ConfigureFile, ConfigureCloudwatch etc.
+    DockerWizard,
+    // Potentially other views like ConfigureFile, ConfigureCloudwatch etc.
 }
 
 #[derive(Props, Clone)] // Removed PartialEq here, will implement manually
@@ -43,6 +46,7 @@ pub fn App(cx: Scope<AppProps>) -> Element {
     // State for the current view
     let current_view = use_state(cx, || CurrentView::Dashboard);
     let selected_container_for_config = use_state(cx, || Option::<String>::None); // Added state for selected container
+    let search_query = use_state(cx, String::new);
 
     // Placeholder for Docker configuration received from the form
     let _docker_config = use_state(cx, || Option::<DockerConfigState>::None); // Changed to _docker_config as it's not read yet
@@ -89,6 +93,7 @@ pub fn App(cx: Scope<AppProps>) -> Element {
 
             // Render StatsView here, e.g., right below the title
             StatsView { stats_ref: cx.props.stats_ref.clone() } // Pass the stats_ref
+            TimelineView { stats_ref: cx.props.stats_ref.clone() }
 
             // Navigation (simple buttons for now)
             nav {
@@ -108,6 +113,11 @@ pub fn App(cx: Scope<AppProps>) -> Element {
                     onclick: move |_| current_view.set(CurrentView::SelectDockerContainer),
                     "Select Docker Container"
                 }
+                button {
+                    class: "px-3 py-1 border rounded hover:bg-gray-100",
+                    onclick: move |_| current_view.set(CurrentView::DockerWizard),
+                    "Docker Wizard"
+                }
                 // Add other source config buttons here later
             }
 
@@ -115,7 +125,21 @@ pub fn App(cx: Scope<AppProps>) -> Element {
             match current_view.get() {
                 CurrentView::Dashboard => rsx! {
                     // Existing layout (or a refined dashboard)
-                    BaseTable { log_groups: cx.props.log_groups.clone() }
+                    input {
+                        class: "border p-1 mb-2",
+                        r#type: "text",
+                        placeholder: "Search...",
+                        value: "{search_query}",
+                        oninput: move |evt| search_query.set(evt.value.clone()),
+                    }
+                    {
+                        let filtered = cx.props.log_groups
+                            .iter()
+                            .filter(|lg| lg.event_summary.to_lowercase().contains(&search_query.get().to_lowercase()))
+                            .cloned()
+                            .collect::<Vec<_>>();
+                        rsx!(BaseTable { log_groups: filtered })
+                    }
                     hr {}
                     LogGroupView { ..props_for_selected_view } // Example
                     hr {}
@@ -144,6 +168,9 @@ pub fn App(cx: Scope<AppProps>) -> Element {
                     DockerContainerSelectionView {
                         on_select_container: handle_container_select // Pass closure directly
                     }
+                },
+                CurrentView::DockerWizard => rsx! {
+                    DockerConfigWizard { on_submit: handle_docker_config_submit }
                 },
                 // Handle other views here
             }
