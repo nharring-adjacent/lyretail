@@ -32,6 +32,7 @@ pub struct LogStats {
     pub lines_per_second: f64,
 }
 
+#[allow(dead_code)]
 #[derive(Clone, Debug)]
 pub(crate) struct LyreTail {
     drain: Arc<RwLock<SingleLayer>>,
@@ -63,6 +64,7 @@ impl LyreTail {
         self.drain.clone()
     }
 
+    #[allow(dead_code)]
     pub(crate) fn get_stats_ref(&self) -> Arc<RwLock<LogStats>> {
         // Added getter
         self.log_stats.clone()

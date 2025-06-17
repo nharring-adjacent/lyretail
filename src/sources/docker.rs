@@ -3,7 +3,8 @@ use async_trait::async_trait;
 use bollard::container::{ListContainersOptions, LogOutput};
 use bollard::errors::Error as BollardError; // Corrected import
 use bollard::Docker;
-use bollard::API_DEFAULT_VERSION; // Re-adding for connect_with_socket
+#[cfg(target_os = "macos")]
+use bollard::API_DEFAULT_VERSION; // Used when connecting on macOS
 use cfg_if::cfg_if; // For conditional compilation
                     // shellexpand will be used via its expanded name, no direct `use shellexpand;` needed if calling `shellexpand::tilde`
 use std::default::Default;
@@ -13,6 +14,7 @@ use tracing::{error, info, instrument, warn}; // Added info and warn // To use D
 
 use crate::sources::LogReader;
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub(crate) struct DockerReader {
     container_name: String,
@@ -21,7 +23,7 @@ pub(crate) struct DockerReader {
     follow: bool,
     timestamps: bool,
     tail: String,
-    docker: Docker,
+    _docker: Docker,
 }
 
 impl DockerReader {
@@ -67,7 +69,7 @@ impl DockerReader {
             follow,
             timestamps,
             tail,
-            docker,
+            _docker: docker,
         })
     }
 }
@@ -153,10 +155,9 @@ impl LogReader for DockerReader {
             until: self.until.unwrap_or_default(), // Changed
             timestamps: self.timestamps,
             tail: self.tail.clone(), // Clone since LogsOptions takes String
-            ..Default::default()
         };
 
-        let mut stream = self.docker.logs(&self.container_name, Some(options));
+        let mut stream = self._docker.logs(&self.container_name, Some(options));
 
         while let Some(log_result) = stream.next().await {
             match log_result {
@@ -326,7 +327,7 @@ mod tests {
                     containers.len()
                 );
                 // You could add more assertions here if needed, e.g., inspect container properties.
-                assert!(true); // Indicates success
+                // Success case
             }
             Err(e) => {
                 // Check if the error indicates a connection problem

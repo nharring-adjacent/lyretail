@@ -30,9 +30,8 @@ pub fn DockerConfigWizard<'a>(cx: Scope<'a, DockerWizardProps<'a>>) -> Element<'
     };
 
     let handle_submit = {
-        let on_submit = cx.props.on_submit.clone();
         move |config: DockerConfigState| {
-            if let Some(handler) = &on_submit {
+            if let Some(handler) = cx.props.on_submit.as_ref() {
                 handler.call(config);
             }
         }
@@ -43,7 +42,7 @@ pub fn DockerConfigWizard<'a>(cx: Scope<'a, DockerWizardProps<'a>>) -> Element<'
             DockerContainerSelectionView { on_select_container: handle_select }
         }),
         WizardStep::Configure => {
-            let name = selected.get().clone();
+            let name = selected.get().clone().unwrap_or_default();
             cx.render(rsx! {
                 DockerConfigView { on_submit: handle_submit, initial_container_name: name }
             })

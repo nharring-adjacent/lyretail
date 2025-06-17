@@ -27,6 +27,7 @@ pub(crate) enum SourceType {
     Docker,
 }
 
+#[allow(dead_code)]
 #[async_trait]
 pub(crate) trait LogReader {
     async fn read_logs(
