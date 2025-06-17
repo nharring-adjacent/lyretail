@@ -19,6 +19,7 @@ use tokio::{
 use tracing::instrument;
 
 use crate::sources::LogReader;
+#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) struct FileReader<'a> {
     file: &'a PathBuf,

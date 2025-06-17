@@ -36,6 +36,7 @@ pub(crate) struct BaseTable {
     app: Arc<LyreTail>,
 }
 
+#[allow(clippy::extra_unused_lifetimes)]
 impl<'a> BaseTable {
     pub(crate) fn new(app: Arc<LyreTail>) -> Self {
         Self {

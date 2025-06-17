@@ -51,11 +51,13 @@ pub(crate) enum UiState {
     Exiting,
 }
 
+#[allow(dead_code)]
 pub(crate) trait LyreUIWidget<B: Backend> {
     fn do_render(&mut self, app: &LyreTail, f: &mut Frame<B>);
     fn handle_events(&mut self, event: Event) -> UiState;
 }
 
+#[allow(clippy::extra_unused_lifetimes)]
 impl<'a> Ui {
     #[instrument(level = "trace", skip_all)]
     pub fn new<'b>(app: Arc<LyreTail>) -> Result<Self, Error> {

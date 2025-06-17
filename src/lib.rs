@@ -1,6 +1,7 @@
 // src/lib.rs
 
 // Declare the dioxus_ui module so it becomes part of the library.
+#![allow(dead_code)]
 pub mod dioxus_ui;
 
 // If other top-level modules from src/ (like app, args, sources, ui)
